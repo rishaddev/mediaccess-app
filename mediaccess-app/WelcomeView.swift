@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct LandingPageView: View {
+struct WelcomeView: View {
     let onLoginTapped: () -> Void
     let onSignUpTapped: () -> Void
     
@@ -12,6 +12,7 @@ struct LandingPageView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(maxHeight: 400)
                 .clipped()
+                .padding(.top, 20)
             
             Spacer()
             
@@ -63,7 +64,7 @@ struct LandingPageView: View {
 
 struct WelcomeView_Previews: PreviewProvider {
     static var previews: some View {
-        LandingPageView(
+        WelcomeView(
             onLoginTapped: {},
             onSignUpTapped: {}
         )

@@ -7,16 +7,24 @@ enum AppState {
     case dashboard
 }
 
+enum DashboardPage {
+    case main
+    case bookAppointment
+    case bookHomeVisit
+}
+
 struct ContentView: View {
     @State private var currentState: AppState = .welcome
     @State private var selectedTab: TabSelection = .home
+    @State private var dashboardPage: DashboardPage = .main
+    
     
     var body: some View {
         NavigationView {
             Group {
                 switch currentState {
                 case .welcome:
-                    LandingPageView(
+                    WelcomeView(
                         onLoginTapped: {
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 currentState = .login
@@ -69,29 +77,58 @@ struct ContentView: View {
                     
                 case .dashboard:
                     VStack(spacing: 0) {
-                        // Main Content based on selected tab
                         Group {
-                            switch selectedTab {
-                            case .home:
-                                DashboardView()
-                            case .appointments:
-                                AppointmentsView()
-                            case .pharmacy:
-                                PharmacyView()
-                            case .family:
-                                FamilyView()
+                            switch dashboardPage {
+                            case .main:
+                                switch selectedTab {
+                                case .home:
+                                    DashboardView()
+                                case .appointments:
+                                    AppointmentsView(
+                                        onBookAppointment: {
+                                            withAnimation {
+                                                dashboardPage = .bookAppointment
+                                            }
+                                        },
+                                        onBookHomeVisit: {
+                                            withAnimation {
+                                                dashboardPage = .bookHomeVisit
+                                            }
+                                        }
+                                    )
+                                case .pharmacy:
+                                    PharmacyView()
+                                case .family:
+                                    FamilyView()
+                                }
+                            case .bookAppointment:
+                                BookAppointmentView(onBackTapped: {
+                                    withAnimation {
+                                        dashboardPage = .main
+                                    }
+                                })
+                            case .bookHomeVisit:
+                                BookHomeVisitView(onBackTapped: {
+                                    withAnimation {
+                                        dashboardPage = .main
+                                    }
+                                })
                             }
                         }
-                        
-                        // Custom Navigation Bar
-                        NavigationBar(selectedTab: $selectedTab)
+
+                        // Show navigation bar only in main dashboard view
+                        if dashboardPage == .main {
+                            NavigationBar(selectedTab: $selectedTab)
+                        }
                     }
+
                 }
             }
         }
         .navigationBarHidden(true)
     }
 }
+
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {

@@ -38,6 +38,7 @@ struct NavigationBar: View {
     
     var body: some View {
         HStack {
+            
             ForEach(TabSelection.allCases, id: \.self) { tab in
                 Button(action: {
                     selectedTab = tab

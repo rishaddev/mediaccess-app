@@ -3,6 +3,9 @@ import SwiftUI
 struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
+    @State private var isLoading = false
+    @State private var showAlert = false
+    @State private var alertMessage = ""
     
     let onBackTapped: () -> Void
     let onLoginSuccess: () -> Void
@@ -10,6 +13,7 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 24) {
+                // Header
                 HStack {
                     Button(action: {
                         onBackTapped()
@@ -77,19 +81,24 @@ struct LoginView: View {
                 VStack(spacing: 16) {
                     // Log In Button
                     Button(action: {
-                        // Validate credentials here
-                        if !email.isEmpty && !password.isEmpty {
-                            onLoginSuccess()
-                        }
+                        loginUser()
                     }) {
-                        Text("Log In")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Color.blue)
-                            .cornerRadius(12)
+                        HStack {
+                            if isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            }
+                            Text(isLoading ? "Logging In..." : "Log In")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(isLoading ? Color.blue.opacity(0.7) : Color.blue)
+                        .cornerRadius(12)
                     }
+                    .disabled(isLoading)
                     
                     // Face ID Button
                     Button(action: {
@@ -124,6 +133,39 @@ struct LoginView: View {
                 .padding(.bottom, 40)
             }
             .background(Color.white)
+            .alert("Login", isPresented: $showAlert) {
+                Button("OK") { }
+            } message: {
+                Text(alertMessage)
+            }
+    }
+    
+    private func loginUser() {
+        // Basic validation
+        guard !email.isEmpty, !password.isEmpty else {
+            alertMessage = "Please fill in both email and password"
+            showAlert = true
+            return
+        }
+        
+        isLoading = true
+        
+        // For demo purposes, we'll do a simple check
+        // In a real app, you'd make an API call to verify credentials
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isLoading = false
+            
+            // Simple demo logic - you can replace this with actual API call
+            if email.contains("@") && password.count >= 6 {
+                // Store login state
+                UserDefaults.standard.set(email, forKey: "userEmail")
+                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                onLoginSuccess()
+            } else {
+                alertMessage = "Invalid email or password"
+                showAlert = true
+            }
+        }
     }
 }
 
