@@ -11,13 +11,13 @@ enum DashboardPage {
     case main
     case bookAppointment
     case bookHomeVisit
+    case appointmentDetails(AppointmentDetail)
 }
 
 struct ContentView: View {
     @State private var currentState: AppState = .welcome
     @State private var selectedTab: TabSelection = .home
     @State private var dashboardPage: DashboardPage = .main
-    
     
     var body: some View {
         NavigationView {
@@ -83,6 +83,7 @@ struct ContentView: View {
                                 switch selectedTab {
                                 case .home:
                                     DashboardView()
+                                    
                                 case .appointments:
                                     AppointmentsView(
                                         onBookAppointment: {
@@ -101,6 +102,7 @@ struct ContentView: View {
                                 case .family:
                                     FamilyView()
                                 }
+                                
                             case .bookAppointment:
                                 BookAppointmentView(onBackTapped: {
                                     withAnimation {
@@ -113,22 +115,29 @@ struct ContentView: View {
                                         dashboardPage = .main
                                     }
                                 })
+                            case .appointmentDetails(let appointment):
+                                AppointmentDetailsView(
+                                    appointment: appointment,
+                                    onBackTapped: {
+                                        withAnimation {
+                                            dashboardPage = .main
+                                        }
+                                    }
+                                )
                             }
                         }
 
                         // Show navigation bar only in main dashboard view
-                        if dashboardPage == .main {
+                        if case .main = dashboardPage {
                             NavigationBar(selectedTab: $selectedTab)
                         }
                     }
-
                 }
             }
         }
         .navigationBarHidden(true)
     }
 }
-
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {

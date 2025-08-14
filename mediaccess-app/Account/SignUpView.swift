@@ -180,7 +180,7 @@ struct SignUpView: View {
         isLoading = true
         
         // Prepare API request
-        let url = URL(string: "https://mediaccess.vercel.app/api/patients/add")!
+        let url = URL(string: "https://mediaccess.vercel.app/api/patient/add")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
