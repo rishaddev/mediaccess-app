@@ -6,7 +6,7 @@ struct OrderTrackingView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            
             HStack {
                 Button(action: {
                     onBackTapped()
@@ -23,8 +23,7 @@ struct OrderTrackingView: View {
                     .fontWeight(.medium)
                 
                 Spacer()
-                
-                // Empty space to center the title
+             
                 Color.clear
                     .frame(width: 24, height: 24)
             }

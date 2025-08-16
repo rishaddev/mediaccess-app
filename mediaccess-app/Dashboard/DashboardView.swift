@@ -60,7 +60,7 @@ struct DashboardView: View {
                                 Image("doctor_avatar")
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
-                                    .frame(width: 120, height: 120)
+                                    .frame(width: 150, height: 150)
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                     .background(Color.white)
                                 
@@ -106,9 +106,14 @@ struct DashboardView: View {
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: 50, height: 50)
                                     .background(Color.orange.opacity(0.3))
-                                    .cornerRadius(12)
+                                    .cornerRadius(8)
                             }
-                            .padding(.horizontal, 20)
+                            .padding(10)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1))
+                            .padding(.horizontal, 10)
                         }
                         
                         // Family Profiles
@@ -127,6 +132,7 @@ struct DashboardView: View {
                                         .frame(width: 50, height: 50)
                                         .clipShape(Circle())
                                         .background(Color.gray.opacity(0.3))
+                                        .cornerRadius(10)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Liam Sharma")
@@ -140,6 +146,12 @@ struct DashboardView: View {
                                     
                                     Spacer()
                                 }
+                                .padding(10)
+                                .cornerRadius(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
                                 
                                 // Sophia Profile
                                 HStack {
@@ -149,6 +161,7 @@ struct DashboardView: View {
                                         .frame(width: 50, height: 50)
                                         .clipShape(Circle())
                                         .background(Color.gray.opacity(0.3))
+                                        .cornerRadius(10)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Sophia Sharma")
@@ -162,8 +175,14 @@ struct DashboardView: View {
                                     
                                     Spacer()
                                 }
+                                .padding(10)
+                                .cornerRadius(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
                             }
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, 10)
                         }
                         
                         Spacer(minLength: 100)
