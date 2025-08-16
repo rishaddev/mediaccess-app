@@ -1,16 +1,23 @@
 import SwiftUI
 
 struct DashboardView: View {
+    @State private var showingProfile = false
+    
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationStack {
+            VStack(spacing: 0) {
                 // Header
                 HStack {
-                    // Profile Avatar
-                    Image("profile_avatar")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 40, height: 40)
-                        .clipShape(Circle())
+                    // Profile Avatar - Now clickable
+                    Button(action: {
+                        showingProfile = true
+                    }) {
+                        Image("profile_avatar")
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                    }
                     
                     Spacer()
                     
@@ -188,35 +195,15 @@ struct DashboardView: View {
                         Spacer(minLength: 100)
                     }
                 }
-                
-                // Bottom Tab Bar - Now handled by CustomNavigationBar
-                // This section can be removed as navigation is handled by ContentView
             }
             .background(Color.white)
-    }
-}
-
-struct TabBarItem: View {
-    let icon: String
-    let title: String
-    let isSelected: Bool
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(isSelected ? .blue : .gray)
-            
-            Text(title)
-                .font(.system(size: 12))
-                .foregroundColor(isSelected ? .blue : .gray)
+            .fullScreenCover(isPresented: $showingProfile) {
+                ProfileView()
+            }
         }
-        .frame(maxWidth: .infinity)
     }
 }
 
-struct DashboardView_Previews: PreviewProvider {
-    static var previews: some View {
-        DashboardView()
-    }
+#Preview {
+    DashboardView()
 }
