@@ -4,6 +4,7 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var showingSettings = false
+    let onLogout: () -> Void
     
     // State variables for editing
     @State private var isEditingName = false
@@ -176,7 +177,7 @@ struct ProfileView: View {
         .background(Color.white)
         
         .fullScreenCover(isPresented: $showingSettings) {
-            SettingsView()
+            SettingsView(onLogout: onLogout)
         }
     }
 }
@@ -315,6 +316,6 @@ struct TabBarItem: View {
 }
 
 
-#Preview {
-    ProfileView()
-}
+//#Preview {
+//    ProfileView()
+//}

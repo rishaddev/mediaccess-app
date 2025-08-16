@@ -1,4 +1,5 @@
 import SwiftUI
+import LocalAuthentication
 
 struct LoginView: View {
     @State private var email = ""
@@ -6,6 +7,7 @@ struct LoginView: View {
     @State private var isLoading = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var isFaceIDLoading = false
     
     let onBackTapped: () -> Void
     let onLoginSuccess: () -> Void
@@ -102,17 +104,27 @@ struct LoginView: View {
                     
                     // Face ID Button
                     Button(action: {
-                        // Simulate Face ID success for demo
-                        onLoginSuccess()
+                        authenticateWithBiometrics()
                     }) {
-                        Text("Face ID")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Color.blue)
-                            .cornerRadius(12)
+                        HStack {
+                            if isFaceIDLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: biometricType() == .faceID ? "faceid" : "touchid")
+                                    .font(.system(size: 16))
+                            }
+                            Text(isFaceIDLoading ? "Authenticating..." : biometricButtonTitle())
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(isFaceIDLoading ? Color.green.opacity(0.7) : Color.green)
+                        .cornerRadius(12)
                     }
+                    .disabled(isFaceIDLoading || !biometricAuthenticationAvailable())
                 }
                 .padding(.horizontal, 20)
                 
@@ -164,6 +176,89 @@ struct LoginView: View {
             } else {
                 alertMessage = "Invalid email or password"
                 showAlert = true
+            }
+        }
+    }
+    
+    private func biometricAuthenticationAvailable() -> Bool {
+        let context = LAContext()
+        var error: NSError?
+        return context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
+    }
+    
+    private func biometricType() -> LABiometryType {
+        let context = LAContext()
+        let _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
+        return context.biometryType
+    }
+    
+    private func biometricButtonTitle() -> String {
+        switch biometricType() {
+        case .faceID:
+            return "Face ID"
+        case .touchID:
+            return "Touch ID"
+        case .opticID:
+            return "Optic ID"
+        default:
+            return "Biometric Login"
+        }
+    }
+    
+    private func authenticateWithBiometrics() {
+        let context = LAContext()
+        var error: NSError?
+        
+        // Check if biometric authentication is available
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
+            alertMessage = error?.localizedDescription ?? "Biometric authentication is not available on this device"
+            showAlert = true
+            return
+        }
+        
+        isFaceIDLoading = true
+        
+        // Set the reason for authentication
+        let reason = "Authenticate to log into your account"
+        
+        context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+            DispatchQueue.main.async {
+                isFaceIDLoading = false
+                
+                if success {
+                    // Authentication successful
+                    // Check if user has previously logged in and stored credentials
+                    if let storedEmail = UserDefaults.standard.string(forKey: "userEmail") {
+                        // User has previously logged in, authenticate them
+                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                        onLoginSuccess()
+                    } else {
+                        // No stored credentials, prompt them to log in first
+                        alertMessage = "Please log in with email and password first to enable biometric authentication"
+                        showAlert = true
+                    }
+                } else {
+                    // Authentication failed
+                    if let error = authenticationError as? LAError {
+                        switch error.code {
+                        case .userCancel:
+                            alertMessage = "Authentication was cancelled"
+                        case .userFallback:
+                            alertMessage = "Authentication failed. Please try again"
+                        case .biometryNotAvailable:
+                            alertMessage = "Biometric authentication is not available"
+                        case .biometryNotEnrolled:
+                            alertMessage = "No biometric authentication is set up on this device"
+                        case .biometryLockout:
+                            alertMessage = "Biometric authentication is locked. Please try again later"
+                        default:
+                            alertMessage = "Authentication failed: \(error.localizedDescription)"
+                        }
+                    } else {
+                        alertMessage = "Authentication failed. Please try again"
+                    }
+                    showAlert = true
+                }
             }
         }
     }

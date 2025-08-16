@@ -4,6 +4,28 @@ struct DashboardView: View {
     @State private var showingProfile = false
     @State private var showingHospitalInfo = false
     
+    // Logout function passed from parent
+    let onLogout: () -> Void
+    
+    // Get user info from UserDefaults
+    private var userEmail: String {
+        return UserDefaults.standard.string(forKey: "userEmail") ?? "User"
+    }
+    
+    // Convert email to display name
+    private var displayName: String {
+        let email = userEmail
+        if email.contains("@") {
+            // Extract name from email (part before @)
+            let username = String(email.split(separator: "@").first ?? "User")
+            // Capitalize first letter and replace dots/underscores with spaces
+            return username.replacingOccurrences(of: ".", with: " ")
+                          .replacingOccurrences(of: "_", with: " ")
+                          .capitalized
+        }
+        return email.capitalized
+    }
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -13,11 +35,16 @@ struct DashboardView: View {
                     Button(action: {
                         showingProfile = true
                     }) {
-                        Image("profile_avatar")
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 40, height: 40)
-                            .clipShape(Circle())
+                        // Show initials if no profile image
+                        ZStack {
+                            Circle()
+                                .fill(Color.blue.opacity(0.1))
+                                .frame(width: 40, height: 40)
+                            
+                            Text(getInitials(from: displayName))
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.blue)
+                        }
                     }
                     
                     Spacer()
@@ -49,11 +76,15 @@ struct DashboardView: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Welcome Message
+                        // Welcome Message - Now dynamic
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Welcome back, Sophia Carter")
+                            Text("Welcome back, \(displayName)")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.black)
+                            
+                            Text(userEmail)
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
@@ -67,12 +98,22 @@ struct DashboardView: View {
                             
                             // Doctor Card
                             VStack(spacing: 12) {
-                                Image("doctor_avatar")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 150, height: 150)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                                    .background(Color.white)
+                                // Placeholder for doctor image
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.blue.opacity(0.1))
+                                        .frame(width: 150, height: 150)
+                                    
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "stethoscope")
+                                            .font(.system(size: 40))
+                                            .foregroundColor(.blue)
+                                        
+                                        Text("Dr. Avatar")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.gray)
+                                    }
+                                }
                                 
                                 VStack(spacing: 4) {
                                     Text("Dr. Ethan Carter")
@@ -106,24 +147,30 @@ struct DashboardView: View {
                                     
                                     Text("Delivered")
                                         .font(.system(size: 14))
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.green)
                                 }
                                 
                                 Spacer()
                                 
-                                Image("medicine_bottle")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 50, height: 50)
-                                    .background(Color.orange.opacity(0.3))
-                                    .cornerRadius(8)
+                                // Medicine bottle icon
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.orange.opacity(0.1))
+                                        .frame(width: 50, height: 50)
+                                    
+                                    Image(systemName: "pills.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.orange)
+                                }
                             }
-                            .padding(10)
+                            .padding(16)
+                            .background(Color.white)
                             .cornerRadius(12)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1))
-                            .padding(.horizontal, 10)
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                            )
+                            .padding(.horizontal, 20)
                         }
                         
                         // Family Profiles
@@ -136,13 +183,15 @@ struct DashboardView: View {
                             VStack(spacing: 12) {
                                 // Liam Profile
                                 HStack {
-                                    Image("liam_avatar")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 50, height: 50)
-                                        .clipShape(Circle())
-                                        .background(Color.gray.opacity(0.3))
-                                        .cornerRadius(10)
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.green.opacity(0.1))
+                                            .frame(width: 50, height: 50)
+                                        
+                                        Text("LS")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.green)
+                                    }
                                     
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Liam Sharma")
@@ -155,26 +204,33 @@ struct DashboardView: View {
                                     }
                                     
                                     Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.gray)
                                 }
-                                .padding(10)
-                                .cornerRadius(10)
+                                .padding(16)
+                                .background(Color.white)
+                                .cornerRadius(12)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
+                                    RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                                 )
                                 
-                                // Sophia Profile
+                                // Current User Profile (dynamic)
                                 HStack {
-                                    Image("sophia_avatar")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 50, height: 50)
-                                        .clipShape(Circle())
-                                        .background(Color.gray.opacity(0.3))
-                                        .cornerRadius(10)
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.blue.opacity(0.1))
+                                            .frame(width: 50, height: 50)
+                                        
+                                        Text(getInitials(from: displayName))
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.blue)
+                                    }
                                     
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text("Sophia Sharma")
+                                        Text(displayName)
                                             .font(.system(size: 16, weight: .medium))
                                             .foregroundColor(.black)
                                         
@@ -184,33 +240,45 @@ struct DashboardView: View {
                                     }
                                     
                                     Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.gray)
                                 }
-                                .padding(10)
-                                .cornerRadius(10)
+                                .padding(16)
+                                .background(Color.white)
+                                .cornerRadius(12)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
+                                    RoundedRectangle(cornerRadius: 12)
                                         .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                                 )
                             }
-                            .padding(.horizontal, 10)
+                            .padding(.horizontal, 20)
                         }
                         
                         Spacer(minLength: 100)
                     }
                 }
             }
-            .background(Color.white)
+            .background(Color(.systemGroupedBackground))
             
             .fullScreenCover(isPresented: $showingProfile) {
-                ProfileView()
+                ProfileView(onLogout: onLogout)
             }
             .fullScreenCover(isPresented: $showingHospitalInfo) {
                 HospitalInformationView()
             }
         }
     }
+    
+    // Helper function to get initials from name
+    private func getInitials(from name: String) -> String {
+        let components = name.components(separatedBy: " ")
+        let initials = components.compactMap { $0.first }.map { String($0) }
+        return initials.prefix(2).joined().uppercased()
+    }
 }
 
 #Preview {
-    DashboardView()
+    DashboardView(onLogout: {})
 }

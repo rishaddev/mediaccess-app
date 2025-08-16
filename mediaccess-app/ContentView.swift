@@ -82,7 +82,7 @@ struct ContentView: View {
                             case .main:
                                 switch selectedTab {
                                 case .home:
-                                    DashboardView()
+                                    DashboardView(onLogout: handleLogout)
                                     
                                 case .appointments:
                                     AppointmentsView(
@@ -137,6 +137,26 @@ struct ContentView: View {
             }
         }
         .navigationBarHidden(true)
+        .onAppear {
+            checkLoginState()
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func handleLogout() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentState = .welcome
+            selectedTab = .home
+            dashboardPage = .main
+        }
+    }
+    
+    private func checkLoginState() {
+        // Check if user is already logged in when app starts
+        if UserDefaults.standard.bool(forKey: "isLoggedIn") {
+            currentState = .dashboard
+        }
     }
 }
 
