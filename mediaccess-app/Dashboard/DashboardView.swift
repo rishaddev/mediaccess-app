@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @State private var showingProfile = false
+    @State private var showingHospitalInfo = false
     
     var body: some View {
         NavigationStack {
@@ -28,7 +29,9 @@ struct DashboardView: View {
                     Spacer()
                     
                     HStack(spacing: 12) {
-                        Button(action: {}) {
+                        Button(action: {
+                            showingHospitalInfo = true
+                        }) {
                             Image(systemName: "house")
                                 .font(.title3)
                                 .foregroundColor(.black)
@@ -197,8 +200,12 @@ struct DashboardView: View {
                 }
             }
             .background(Color.white)
+            
             .fullScreenCover(isPresented: $showingProfile) {
                 ProfileView()
+            }
+            .fullScreenCover(isPresented: $showingHospitalInfo) {
+                HospitalInformationView()
             }
         }
     }
