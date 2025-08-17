@@ -4,21 +4,20 @@ struct DashboardView: View {
     @State private var showingProfile = false
     @State private var showingHospitalInfo = false
     
-    // Logout function passed from parent
     let onLogout: () -> Void
     
-    // Get user info from UserDefaults
     private var userEmail: String {
         return UserDefaults.standard.string(forKey: "userEmail") ?? "User"
     }
     
-    // Convert email to display name
     private var displayName: String {
+        if let storedName = UserDefaults.standard.string(forKey: "userName"), !storedName.isEmpty {
+            return storedName
+        }
+        
         let email = userEmail
         if email.contains("@") {
-            // Extract name from email (part before @)
             let username = String(email.split(separator: "@").first ?? "User")
-            // Capitalize first letter and replace dots/underscores with spaces
             return username.replacingOccurrences(of: ".", with: " ")
                           .replacingOccurrences(of: "_", with: " ")
                           .capitalized
@@ -31,11 +30,9 @@ struct DashboardView: View {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    // Profile Avatar - Now clickable
                     Button(action: {
                         showingProfile = true
                     }) {
-                        // Show initials if no profile image
                         ZStack {
                             Circle()
                                 .fill(Color.blue.opacity(0.1))
@@ -78,7 +75,7 @@ struct DashboardView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         // Welcome Message - Now dynamic
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Welcome back, \(displayName)")
+                            Text("Hi, \(displayName)")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.black)
                             
@@ -98,7 +95,6 @@ struct DashboardView: View {
                             
                             // Doctor Card
                             VStack(spacing: 12) {
-                                // Placeholder for doctor image
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 16)
                                         .fill(Color.blue.opacity(0.1))

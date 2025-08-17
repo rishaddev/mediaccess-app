@@ -1,6 +1,41 @@
 import SwiftUI
 import LocalAuthentication
 
+// Data models for API response
+struct LoginResponse: Codable {
+    let message: String
+    let patient: Patient
+}
+
+struct Patient: Codable {
+    let id: String
+    var email: String
+    var name: String?
+    var phone: String?
+    var contactNumber: String?
+    var address: String?
+    var bloodType: String?
+    var allergy: String?
+    var medications: String?
+    var nicNo: String?
+    var dob: String?
+    var gender: String?
+    var emergencyContact: [EmergencyContact]?
+    
+    // Map contactNumber to phone for consistency
+    var phoneNumber: String? {
+        return phone ?? contactNumber
+    }
+}
+
+// EmergencyContact model for the emergency contact array
+//struct EmergencyContact: Codable {
+//    let id: String
+//    let name: String
+//    let contactNumber: String
+//    let relation: String
+//}
+
 struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
@@ -160,23 +195,110 @@ struct LoginView: View {
             return
         }
         
+        // Email format validation
+        guard email.contains("@") && email.contains(".") else {
+            alertMessage = "Please enter a valid email address"
+            showAlert = true
+            return
+        }
+        
         isLoading = true
         
-        // For demo purposes, we'll do a simple check
-        // In a real app, you'd make an API call to verify credentials
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            isLoading = false
-            
-            // Simple demo logic - you can replace this with actual API call
-            if email.contains("@") && password.count >= 6 {
-                // Store login state
-                UserDefaults.standard.set(email, forKey: "userEmail")
-                UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                onLoginSuccess()
-            } else {
-                alertMessage = "Invalid email or password"
-                showAlert = true
+        // API call to authenticate user
+        authenticateWithAPI(email: email, password: password)
+    }
+    
+    private func authenticateWithAPI(email: String, password: String) {
+        guard let url = URL(string: "https://mediaccess.vercel.app/api/patient/login") else {
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.alertMessage = "Invalid API endpoint"
+                self.showAlert = true
             }
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Create request body
+        let requestBody: [String: String] = [
+            "email": email,
+            "password": password
+        ]
+        
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        } catch {
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.alertMessage = "Failed to prepare request"
+                self.showAlert = true
+            }
+            return
+        }
+        
+        // Make the API call
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                // Handle network error
+                if let error = error {
+                    self.alertMessage = "Network error: \(error.localizedDescription)"
+                    self.showAlert = true
+                    return
+                }
+                
+                // Handle HTTP response
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode == 200 {
+                        // Success - parse the response
+                        if let data = data {
+                            do {
+                                let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
+                                
+                                // Store user data and login state
+                                self.storeUserData(patient: loginResponse.patient)
+                                
+                                // Navigate to success
+                                self.onLoginSuccess()
+                                
+                            } catch {
+                                self.alertMessage = "Failed to parse server response"
+                                self.showAlert = true
+                            }
+                        }
+                    } else if httpResponse.statusCode == 401 {
+                        // Invalid credentials
+                        self.alertMessage = "Invalid email or password"
+                        self.showAlert = true
+                    } else if httpResponse.statusCode == 400 {
+                        // Bad request
+                        self.alertMessage = "Please check your email and password"
+                        self.showAlert = true
+                    } else {
+                        // Other server errors
+                        self.alertMessage = "Server error. Please try again later"
+                        self.showAlert = true
+                    }
+                }
+            }
+        }.resume()
+    }
+    
+    private func storeUserData(patient: Patient) {
+        // Store user data in UserDefaults for persistence
+        UserDefaults.standard.set(patient.email, forKey: "userEmail")
+        UserDefaults.standard.set(patient.id, forKey: "userId")
+        UserDefaults.standard.set(patient.name, forKey: "userName")
+        UserDefaults.standard.set(patient.phone, forKey: "userPhone")
+        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+        
+        // Store patient data as JSON for future use
+        if let patientData = try? JSONEncoder().encode(patient) {
+            UserDefaults.standard.set(patientData, forKey: "patientData")
         }
     }
     
@@ -223,41 +345,41 @@ struct LoginView: View {
         
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
             DispatchQueue.main.async {
-                isFaceIDLoading = false
+                self.isFaceIDLoading = false
                 
                 if success {
                     // Authentication successful
                     // Check if user has previously logged in and stored credentials
-                    if let storedEmail = UserDefaults.standard.string(forKey: "userEmail") {
+                    if let storedEmail = UserDefaults.standard.string(forKey: "userEmail"),
+                       UserDefaults.standard.bool(forKey: "isLoggedIn") {
                         // User has previously logged in, authenticate them
-                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                        onLoginSuccess()
+                        self.onLoginSuccess()
                     } else {
                         // No stored credentials, prompt them to log in first
-                        alertMessage = "Please log in with email and password first to enable biometric authentication"
-                        showAlert = true
+                        self.alertMessage = "Please log in with email and password first to enable biometric authentication"
+                        self.showAlert = true
                     }
                 } else {
                     // Authentication failed
                     if let error = authenticationError as? LAError {
                         switch error.code {
                         case .userCancel:
-                            alertMessage = "Authentication was cancelled"
+                            self.alertMessage = "Authentication was cancelled"
                         case .userFallback:
-                            alertMessage = "Authentication failed. Please try again"
+                            self.alertMessage = "Authentication failed. Please try again"
                         case .biometryNotAvailable:
-                            alertMessage = "Biometric authentication is not available"
+                            self.alertMessage = "Biometric authentication is not available"
                         case .biometryNotEnrolled:
-                            alertMessage = "No biometric authentication is set up on this device"
+                            self.alertMessage = "No biometric authentication is set up on this device"
                         case .biometryLockout:
-                            alertMessage = "Biometric authentication is locked. Please try again later"
+                            self.alertMessage = "Biometric authentication is locked. Please try again later"
                         default:
-                            alertMessage = "Authentication failed: \(error.localizedDescription)"
+                            self.alertMessage = "Authentication failed: \(error.localizedDescription)"
                         }
                     } else {
-                        alertMessage = "Authentication failed. Please try again"
+                        self.alertMessage = "Authentication failed. Please try again"
                     }
-                    showAlert = true
+                    self.showAlert = true
                 }
             }
         }

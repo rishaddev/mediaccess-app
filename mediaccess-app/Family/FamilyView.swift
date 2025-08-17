@@ -15,30 +15,10 @@ struct FamilyView: View {
             // Main Family View
             VStack(spacing: 0) {
                 // Header
-                HStack {
-                    Button(action: {
-                        // Handle back navigation - this will be handled by parent
-                    }) {
-                        Image(systemName: "arrow.left")
-                            .font(.title2)
-                            .foregroundColor(.black)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Family")
-                        .font(.headline)
-                        .fontWeight(.medium)
-                    
-                    Spacer()
-                    
-                    // Empty space to center the title
-                    Color.clear
-                        .frame(width: 24, height: 24)
-                }
-                .padding(.horizontal)
-                .padding(.top, 20)
-                .padding(.bottom, 20)
+                Text("Family")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.black)
+                    .padding(.vertical, 20)
                 
                 ScrollView {
                     VStack(spacing: 32) {
@@ -46,7 +26,7 @@ struct FamilyView: View {
                         VStack(alignment: .leading, spacing: 20) {
                             HStack {
                                 Text("Family Members")
-                                    .font(.system(size: 28, weight: .semibold))
+                                    .font(.system(size: 20, weight: .semibold))
                                     .foregroundColor(.black)
                                 Spacer()
                             }

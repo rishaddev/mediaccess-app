@@ -142,8 +142,6 @@ struct ContentView: View {
         }
     }
     
-    // MARK: - Helper Functions
-    
     private func handleLogout() {
         withAnimation(.easeInOut(duration: 0.3)) {
             currentState = .welcome
@@ -153,7 +151,6 @@ struct ContentView: View {
     }
     
     private func checkLoginState() {
-        // Check if user is already logged in when app starts
         if UserDefaults.standard.bool(forKey: "isLoggedIn") {
             currentState = .dashboard
         }
