@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 // Updated Doctor model to match API response
 struct Doctor: Codable, Identifiable {
@@ -27,6 +28,18 @@ struct Doctor: Codable, Identifiable {
     }
 }
 
+// Appointment data structure for API
+struct AppointmentBookingRequest: Codable {
+    let patientId: String
+    let patientName: String
+    let contactNumber: String
+    let dob: String
+    let doctorName: String
+    let speciality: String
+    let appointmentDate: String
+    let appointmentTime: String
+}
+
 struct BookAppointmentView: View {
     @State private var searchText = ""
     @State private var selectedDoctor: Doctor?
@@ -37,10 +50,44 @@ struct BookAppointmentView: View {
     @State private var date = Date()
     @State private var doctors: [Doctor] = []
     @State private var isLoading = false
+    @State private var isBooking = false
     @State private var showAlert = false
     @State private var alertMessage = ""
     
+    // Editable patient details
+    @State private var editablePatientName = ""
+    @State private var editableContactNumber = ""
+    @State private var editableDob = ""
+    
     let onBackTapped: () -> Void
+    
+    // Patient details from UserDefaults
+    private var patientId: String {
+        return UserDefaults.standard.string(forKey: "patientId") ?? ""
+    }
+    
+    private var storedPatientName: String {
+        if let storedName = UserDefaults.standard.string(forKey: "userName"), !storedName.isEmpty {
+            return storedName
+        }
+        
+        let email = UserDefaults.standard.string(forKey: "userEmail") ?? ""
+        if email.contains("@") {
+            let username = String(email.split(separator: "@").first ?? "User")
+            return username.replacingOccurrences(of: ".", with: " ")
+                          .replacingOccurrences(of: "_", with: " ")
+                          .capitalized
+        }
+        return email.capitalized
+    }
+    
+    private var storedContactNumber: String {
+        return UserDefaults.standard.string(forKey: "contactNumber") ?? ""
+    }
+    
+    private var storedDob: String {
+        return UserDefaults.standard.string(forKey: "dob") ?? ""
+    }
     
     // Filtered doctors based on search text
     private var filteredDoctors: [Doctor] {
@@ -59,7 +106,8 @@ struct BookAppointmentView: View {
             headerView
             
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(spacing: 20) {
+                    patientDetailsSection
                     searchDoctorsSection
                     selectedDoctorSection
                     availableDoctorsSection
@@ -72,8 +120,9 @@ struct BookAppointmentView: View {
             
             bookAppointmentButton
         }
-        .background(Color.white)
+        .background(Color(.systemGroupedBackground))
         .onAppear {
+            initializePatientDetails()
             fetchDoctors()
         }
         .sheet(isPresented: $showingDatePicker) {
@@ -83,7 +132,12 @@ struct BookAppointmentView: View {
             timePickerSheet
         }
         .alert("Booking Status", isPresented: $showAlert) {
-            Button("OK") { }
+            Button("OK") {
+                // Reset form after successful booking
+                if alertMessage.contains("successfully") {
+                    resetForm()
+                }
+            }
         } message: {
             Text(alertMessage)
         }
@@ -93,28 +147,83 @@ struct BookAppointmentView: View {
     private var headerView: some View {
         HStack {
             Button(action: onBackTapped) {
-                Image(systemName: "arrow.left")
-                    .font(.title2)
-                    .foregroundColor(.black)
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 40, height: 40)
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                }
             }
             
             Spacer()
             
             Text("Book Appointment")
-                .font(.system(size: 20, weight: .semibold))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundColor(.black)
             
             Spacer()
             
             // Invisible button for balance
-            Button(action: {}) {
-                Image(systemName: "arrow.left")
-                    .font(.title2)
-                    .opacity(0)
-            }
+            Circle()
+                .fill(Color.clear)
+                .frame(width: 40, height: 40)
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
+        .padding(.bottom, 5)
+        .background(Color(.systemGroupedBackground))
+    }
+    
+    // MARK: - Patient Details Section
+    private var patientDetailsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Patient Information")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.black)
+            
+            VStack(spacing: 12) {
+                patientInfoField(title: "Full Name", value: $editablePatientName, placeholder: "Enter your full name", icon: "person.fill")
+                patientInfoField(title: "Contact Number", value: $editableContactNumber, placeholder: "Enter your contact number", icon: "phone.fill")
+                patientInfoField(title: "Date of Birth", value: $editableDob, placeholder: "Enter your date of birth (YYYY-MM-DD)", icon: "calendar")
+            }
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        }
+    }
+    
+    private func patientInfoField(title: String, value: Binding<String>, placeholder: String, icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(.blue)
+                }
+                
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.black)
+                
+                Spacer()
+            }
+            
+            TextField(placeholder, text: value)
+                .font(.system(size: 16))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+        }
     }
     
     // MARK: - Search Doctors Section
@@ -133,8 +242,9 @@ struct BookAppointmentView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
-            .background(Color.gray.opacity(0.1))
+            .background(Color.white)
             .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
     }
     
@@ -154,7 +264,7 @@ struct BookAppointmentView: View {
     
     private func selectedDoctorCard(doctor: Doctor) -> some View {
         HStack(spacing: 12) {
-            doctorImage(imageURL: doctor.imageURL)
+            doctorIcon()
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(doctor.name)
@@ -165,9 +275,16 @@ struct BookAppointmentView: View {
                     .font(.system(size: 14))
                     .foregroundColor(.gray)
                 
-                Text(doctor.email)
-                    .font(.system(size: 12))
-                    .foregroundColor(.blue)
+                HStack(spacing: 4) {
+                    Image(systemName: "envelope")
+                        .font(.system(size: 10))
+                    Text(doctor.email)
+                        .font(.system(size: 12))
+                }
+                .foregroundColor(.blue)
+                .padding(6)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(6)
             }
             
             Spacer()
@@ -175,14 +292,24 @@ struct BookAppointmentView: View {
             Button(action: {
                 selectedDoctor = nil
             }) {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.gray)
-                    .font(.title3)
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.1))
+                        .frame(width: 30, height: 30)
+                    
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.red)
+                }
             }
         }
-        .padding()
-        .background(Color.blue.opacity(0.1))
+        .padding(16)
+        .background(Color.green.opacity(0.05))
         .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.green.opacity(0.3), lineWidth: 1)
+        )
     }
     
     // MARK: - Available Doctors Section
@@ -203,45 +330,55 @@ struct BookAppointmentView: View {
         } else if filteredDoctors.isEmpty {
             emptyStateView
         } else {
-            doctorsList
+            VStack(spacing: 12) {
+                ForEach(filteredDoctors) { doctor in
+                    doctorRow(doctor: doctor)
+                }
+            }
         }
     }
     
     private var loadingView: some View {
-        HStack {
-            Spacer()
-            VStack(spacing: 16) {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle())
-                Text("Loading doctors...")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-            }
-            Spacer()
+        VStack(spacing: 16) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                .scaleEffect(1.2)
+            Text("Loading doctors...")
+                .font(.system(size: 14))
+                .foregroundColor(.gray)
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+        .background(Color.white)
+        .cornerRadius(12)
     }
     
     private var emptyStateView: some View {
-        HStack {
-            Spacer()
-            VStack(spacing: 8) {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.gray.opacity(0.1))
+                    .frame(width: 60, height: 60)
+                
                 Image(systemName: "person.slash")
-                    .font(.title)
-                    .foregroundColor(.gray)
-                Text(searchText.isEmpty ? "No doctors available" : "No doctors found")
-                    .font(.system(size: 16))
+                    .font(.system(size: 24))
                     .foregroundColor(.gray)
             }
-            Spacer()
+            
+            Text(searchText.isEmpty ? "No doctors available" : "No doctors found")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.gray)
+            
+            if !searchText.isEmpty {
+                Text("Try a different search term")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray.opacity(0.7))
+            }
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
-    }
-    
-    private var doctorsList: some View {
-        ForEach(filteredDoctors) { doctor in
-            doctorRow(doctor: doctor)
-        }
+        .background(Color.white)
+        .cornerRadius(12)
     }
     
     private func doctorRow(doctor: Doctor) -> some View {
@@ -249,7 +386,7 @@ struct BookAppointmentView: View {
             selectedDoctor = doctor
         }) {
             HStack(spacing: 12) {
-                doctorImage(imageURL: doctor.imageURL, showProgress: true)
+                doctorIcon()
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(doctor.name)
@@ -260,48 +397,55 @@ struct BookAppointmentView: View {
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
                     
-                    Text(doctor.email)
-                        .font(.system(size: 12))
-                        .foregroundColor(.blue)
+                    HStack(spacing: 4) {
+                        Image(systemName: "envelope")
+                            .font(.system(size: 10))
+                        Text(doctor.email)
+                            .font(.system(size: 12))
+                    }
+                    .foregroundColor(.blue)
+                    .padding(4)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(4)
                 }
                 
                 Spacer()
                 
                 if selectedDoctor?.id == doctor.id {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.blue)
-                        .font(.title3)
+                    ZStack {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 24, height: 24)
+                        
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
                 }
             }
-            .padding(.vertical, 8)
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
+        .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Doctor Image Helper
-    private func doctorImage(imageURL: String, showProgress: Bool = false) -> some View {
-        AsyncImage(url: URL(string: imageURL)) { image in
-            image
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-        } placeholder: {
+    // MARK: - Doctor Icon Helper
+    private func doctorIcon() -> some View {
+        ZStack {
             Circle()
-                .fill(Color.teal.opacity(0.3))
-                .overlay(
-                    Group {
-                        if showProgress {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .teal))
-                                .scaleEffect(0.7)
-                        } else {
-                            Image(systemName: "person.fill")
-                                .font(.title2)
-                                .foregroundColor(.teal)
-                        }
-                    }
-                )
+                .fill(Color.blue.opacity(0.1))
+                .frame(width: 60, height: 60)
+            
+            Image(systemName: "stethoscope")
+                .font(.system(size: 24))
+                .foregroundColor(.blue)
         }
-        .frame(width: 60, height: 60)
-        .clipShape(Circle())
     }
     
     // MARK: - Select Date & Time Section
@@ -322,17 +466,37 @@ struct BookAppointmentView: View {
         Button(action: {
             showingDatePicker = true
         }) {
-            HStack {
-                Text(selectedDate.isEmpty ? "Select Date" : selectedDate)
-                    .foregroundColor(selectedDate.isEmpty ? .gray : .black)
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.orange.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: "calendar")
+                        .font(.system(size: 14))
+                        .foregroundColor(.orange)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Appointment Date")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                    
+                    Text(selectedDate.isEmpty ? "Select Date" : selectedDate)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(selectedDate.isEmpty ? .gray : .black)
+                }
+                
                 Spacer()
-                Image(systemName: "calendar")
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
                     .foregroundColor(.gray)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .background(Color.gray.opacity(0.1))
+            .padding(16)
+            .background(Color.white)
             .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
     }
     
@@ -340,64 +504,164 @@ struct BookAppointmentView: View {
         Button(action: {
             showingTimePicker = true
         }) {
-            HStack {
-                Text(selectedTime.isEmpty ? "Select Time" : selectedTime)
-                    .foregroundColor(selectedTime.isEmpty ? .gray : .black)
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.purple.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: "clock")
+                        .font(.system(size: 14))
+                        .foregroundColor(.purple)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Appointment Time")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                    
+                    Text(selectedTime.isEmpty ? "Select Time" : selectedTime)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(selectedTime.isEmpty ? .gray : .black)
+                }
+                
                 Spacer()
-                Image(systemName: "clock")
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
                     .foregroundColor(.gray)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
-            .background(Color.gray.opacity(0.1))
+            .padding(16)
+            .background(Color.white)
             .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
     }
     
     // MARK: - Book Appointment Button
     private var bookAppointmentButton: some View {
         Button(action: bookAppointment) {
-            Text("Book Appointment")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(isBookingEnabled ? Color.blue : Color.gray)
-                .cornerRadius(12)
+            HStack {
+                if isBooking {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                } else if isBookingEnabled {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                
+                Text(isBooking ? "Booking..." : "Book Appointment")
+                    .font(.system(size: 18, weight: .semibold))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: isBookingEnabled && !isBooking ? [Color.blue, Color.blue.opacity(0.8)] : [Color.gray, Color.gray.opacity(0.8)]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .cornerRadius(16)
         }
-        .disabled(!isBookingEnabled)
+        .disabled(!isBookingEnabled || isBooking)
         .padding(.horizontal, 20)
-        .padding(.bottom, 20)
+        .padding(.bottom, 30)
     }
     
     // MARK: - Sheet Views
     private var datePickerSheet: some View {
-        DatePicker("Select Date", selection: $date, in: Date()..., displayedComponents: .date)
-            .datePickerStyle(WheelDatePickerStyle())
-            .presentationDetents([.medium])
-            .onDisappear {
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
-                selectedDate = formatter.string(from: date)
+        NavigationView {
+            VStack {
+                DatePicker("Select Date", selection: $date, in: Date()..., displayedComponents: .date)
+                    .datePickerStyle(WheelDatePickerStyle())
+                    .padding()
+                
+                Spacer()
             }
+            .navigationTitle("Select Date")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        selectedDate = formatter.string(from: date)
+                        showingDatePicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
     
     private var timePickerSheet: some View {
-        DatePicker("Select Time", selection: $date, displayedComponents: .hourAndMinute)
-            .datePickerStyle(WheelDatePickerStyle())
-            .presentationDetents([.medium])
-            .onDisappear {
-                let formatter = DateFormatter()
-                formatter.timeStyle = .short
-                selectedTime = formatter.string(from: date)
+        NavigationView {
+            VStack {
+                DatePicker("Select Time", selection: $date, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(WheelDatePickerStyle())
+                    .padding()
+                
+                Spacer()
             }
+            .navigationTitle("Select Time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "HH:mm"
+                        selectedTime = formatter.string(from: date)
+                        showingTimePicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
     
     // MARK: - Helper Properties and Functions
     
     // Check if booking is enabled (all required fields are filled)
     private var isBookingEnabled: Bool {
-        return selectedDoctor != nil && !selectedDate.isEmpty && !selectedTime.isEmpty
+        return selectedDoctor != nil &&
+               !selectedDate.isEmpty &&
+               !selectedTime.isEmpty &&
+               !editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               !editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+               !editableDob.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    // Initialize patient details
+    private func initializePatientDetails() {
+        editablePatientName = storedPatientName
+        editableContactNumber = storedContactNumber
+        editableDob = storedDob
+    }
+    
+    // Reset form after successful booking
+    private func resetForm() {
+        selectedDoctor = nil
+        selectedDate = ""
+        selectedTime = ""
+        searchText = ""
+        // Keep patient details for next booking
+    }
+    
+    // Prepare appointment data for API
+    private func prepareAppointmentData() -> AppointmentBookingRequest {
+        return AppointmentBookingRequest(
+            patientId: patientId,
+            patientName: editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines),
+            contactNumber: editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines),
+            dob: editableDob.trimmingCharacters(in: .whitespacesAndNewlines),
+            doctorName: selectedDoctor?.name ?? "",
+            speciality: selectedDoctor?.speciality ?? "",
+            appointmentDate: selectedDate,
+            appointmentTime: selectedTime
+        )
     }
     
     private func fetchDoctors() {
@@ -445,7 +709,7 @@ struct BookAppointmentView: View {
         }.resume()
     }
     
-    // Book appointment function
+    // Book appointment function with API integration
     private func bookAppointment() {
         guard let doctor = selectedDoctor else {
             alertMessage = "Please select a doctor"
@@ -453,9 +717,90 @@ struct BookAppointmentView: View {
             return
         }
         
-        // TODO: Implement appointment booking API call
-        alertMessage = "Appointment booked with \(doctor.name) on \(selectedDate) at \(selectedTime)"
-        showAlert = true
+        // Validate required fields
+        let patientName = editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let contactNumber = editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        let dob = editableDob.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if patientName.isEmpty {
+            alertMessage = "Please enter your full name"
+            showAlert = true
+            return
+        }
+        
+        if contactNumber.isEmpty {
+            alertMessage = "Please enter your contact number"
+            showAlert = true
+            return
+        }
+        
+        if dob.isEmpty {
+            alertMessage = "Please enter your date of birth"
+            showAlert = true
+            return
+        }
+        
+        guard let url = URL(string: "https://mediaccess.vercel.app/api/appointment/add") else {
+            alertMessage = "Invalid API endpoint"
+            showAlert = true
+            return
+        }
+        
+        let appointmentData = prepareAppointmentData()
+        
+        isBooking = true
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            let jsonData = try JSONEncoder().encode(appointmentData)
+            request.httpBody = jsonData
+            
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                DispatchQueue.main.async {
+                    isBooking = false
+                    
+                    if let error = error {
+                        alertMessage = "Network error: \(error.localizedDescription)"
+                        showAlert = true
+                        return
+                    }
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                            // Success
+                            alertMessage = "🎉 Appointment successfully booked!\n\nDoctor: \(doctor.name)\nSpecialty: \(doctor.specialty)\nDate: \(selectedDate)\nTime: \(selectedTime)\n\nYou will receive a confirmation shortly."
+                            showAlert = true
+                            
+                            // Update UserDefaults with the latest patient info
+                            UserDefaults.standard.set(patientName, forKey: "userName")
+                            UserDefaults.standard.set(contactNumber, forKey: "contactNumber")
+                            UserDefaults.standard.set(dob, forKey: "dob")
+                            
+                        } else {
+                            // Handle server errors
+                            if let data = data,
+                               let errorMessage = String(data: data, encoding: .utf8) {
+                                alertMessage = "Booking failed: \(errorMessage)"
+                            } else {
+                                alertMessage = "Booking failed with status code: \(httpResponse.statusCode)"
+                            }
+                            showAlert = true
+                        }
+                    } else {
+                        alertMessage = "Invalid response from server"
+                        showAlert = true
+                    }
+                }
+            }.resume()
+            
+        } catch {
+            isBooking = false
+            alertMessage = "Failed to prepare appointment data: \(error.localizedDescription)"
+            showAlert = true
+        }
     }
 }
 

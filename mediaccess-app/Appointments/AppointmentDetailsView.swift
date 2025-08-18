@@ -190,7 +190,8 @@ struct AppointmentDetail: Identifiable {
     let location: String
     let coordinate: CLLocationCoordinate2D
     let instructions: String
-    let dateTime: String
+    let date: String
+    let time: String
 }
 
 extension AppointmentDetail {
@@ -201,7 +202,8 @@ extension AppointmentDetail {
             location: "123 Health Clinic, 456 Wellness Ave",
             coordinate: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
             instructions: "Please arrive 15 minutes early for registration. Bring your insurance card and a list of current medications.",
-            dateTime: "10:00 AM"
+            date: "12 August 2025",
+            time:"10:00 AM"
         ),
         AppointmentDetail(
             title: "Cardiology Checkup",
@@ -209,7 +211,8 @@ extension AppointmentDetail {
             location: "456 Heart Center, 789 Medical Plaza",
             coordinate: CLLocationCoordinate2D(latitude: 37.7849, longitude: -122.4094),
             instructions: "Please fast for 12 hours before the appointment. Bring previous test results if available.",
-            dateTime: "2:30 PM"
+            date: "16 August 2025",
+            time:"04:00 PM"
         ),
         AppointmentDetail(
             title: "Rehabilitation Session",
@@ -217,7 +220,8 @@ extension AppointmentDetail {
             location: "789 Wellness Center, 123 Therapy Street",
             coordinate: CLLocationCoordinate2D(latitude: 37.7649, longitude: -122.4294),
             instructions: "Please wear comfortable workout clothes and bring a water bottle. Arrive 10 minutes early.",
-            dateTime: "11:30 AM"
+            date: "18 August 2025",
+            time:"05:30 AM"
         )
     ]
 }
