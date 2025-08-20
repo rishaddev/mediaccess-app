@@ -289,11 +289,18 @@ struct LoginView: View {
     }
     
     private func storeUserData(patient: Patient) {
-        // Store user data in UserDefaults for persistence
-        UserDefaults.standard.set(patient.email, forKey: "userEmail")
-        UserDefaults.standard.set(patient.id, forKey: "userId")
-        UserDefaults.standard.set(patient.name, forKey: "userName")
-        UserDefaults.standard.set(patient.phone, forKey: "userPhone")
+        // Store user data in UserDefaults for persistence with correct keys
+        UserDefaults.standard.set(patient.email, forKey: "email")
+        UserDefaults.standard.set(patient.id, forKey: "id") // Changed from "userId" to "patientId"
+        UserDefaults.standard.set(patient.name, forKey: "name") // Keep as userName for compatibility
+        UserDefaults.standard.set(patient.phoneNumber, forKey: "contactNumber") // Changed from "userPhone" to "contactNumber"
+        UserDefaults.standard.set(patient.dob, forKey: "dob") // Add dob storage
+        UserDefaults.standard.set(patient.address, forKey: "address") // Add address storage
+        UserDefaults.standard.set(patient.bloodType, forKey: "bloodType") // Add bloodType storage
+        UserDefaults.standard.set(patient.allergy, forKey: "allergy") // Add allergy storage
+        UserDefaults.standard.set(patient.medications, forKey: "medications") // Add medications storage
+        UserDefaults.standard.set(patient.nicNo, forKey: "nicNo") // Add nicNo storage
+        UserDefaults.standard.set(patient.gender, forKey: "gender") // Add gender storage
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         
         // Store patient data as JSON for future use

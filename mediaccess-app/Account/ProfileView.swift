@@ -30,7 +30,7 @@ struct ProfileView: View {
     // Editable values - initialized from stored data
     @State private var name: String
     @State private var email: String
-    @State private var phone: String
+    @State private var contactNumber: String
     @State private var address: String
     @State private var bloodType: String
     @State private var allergies: String
@@ -50,7 +50,7 @@ struct ProfileView: View {
         // Initialize from stored patient data or fallback to defaults
         let storedName = UserDefaults.standard.string(forKey: "userName") ?? ""
         let storedEmail = UserDefaults.standard.string(forKey: "userEmail") ?? ""
-        let storedPhone = UserDefaults.standard.string(forKey: "userPhone") ?? ""
+        let storedContactNumber = UserDefaults.standard.string(forKey: "userPhone") ?? ""
         let storedId = UserDefaults.standard.string(forKey: "userId") ?? ""
         
         // Try to get full patient data
@@ -61,7 +61,7 @@ struct ProfileView: View {
         
         _name = State(initialValue: patient?.name ?? storedName)
         _email = State(initialValue: patient?.email ?? storedEmail)
-        _phone = State(initialValue: patient?.phone ?? storedPhone)
+        _contactNumber = State(initialValue: patient?.contactNumber ?? storedContactNumber)
         _patientId = State(initialValue: patient?.id ?? storedId)
         _address = State(initialValue: patient?.address ?? "")
         _bloodType = State(initialValue: patient?.bloodType ?? "")
@@ -153,8 +153,8 @@ struct ProfileView: View {
                             isEditing: $isEditingEmail
                         )
                         EditableProfileInfoRow(
-                            title: "Phone",
-                            value: $phone,
+                            title: "Contact Number",
+                            value: $contactNumber,
                             isEditing: $isEditingPhone
                         )
                         EditableProfileInfoRow(
@@ -521,11 +521,11 @@ struct EditableProfileInfoRow: View {
     private func updateUserDefaults(field: String, value: String) {
         switch field {
         case "Name":
-            UserDefaults.standard.set(value, forKey: "userName")
+            UserDefaults.standard.set(value, forKey: "name")
         case "Email":
-            UserDefaults.standard.set(value, forKey: "userEmail")
+            UserDefaults.standard.set(value, forKey: "email")
         case "Phone":
-            UserDefaults.standard.set(value, forKey: "userPhone")
+            UserDefaults.standard.set(value, forKey: "contactNumber")
         default:
             break
         }

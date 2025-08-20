@@ -63,15 +63,15 @@ struct BookAppointmentView: View {
     
     // Patient details from UserDefaults
     private var patientId: String {
-        return UserDefaults.standard.string(forKey: "patientId") ?? ""
+        return UserDefaults.standard.string(forKey: "id") ?? ""
     }
     
     private var storedPatientName: String {
-        if let storedName = UserDefaults.standard.string(forKey: "userName"), !storedName.isEmpty {
+        if let storedName = UserDefaults.standard.string(forKey: "name"), !storedName.isEmpty {
             return storedName
         }
         
-        let email = UserDefaults.standard.string(forKey: "userEmail") ?? ""
+        let email = UserDefaults.standard.string(forKey: "email") ?? ""
         if email.contains("@") {
             let username = String(email.split(separator: "@").first ?? "User")
             return username.replacingOccurrences(of: ".", with: " ")

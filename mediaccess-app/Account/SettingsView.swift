@@ -193,18 +193,11 @@ struct SettingsView: View {
     // MARK: - Helper Functions
     
     private func getUserEmail() -> String {
-        return UserDefaults.standard.string(forKey: "userEmail") ?? "user@email.com"
+        return UserDefaults.standard.string(forKey: "email") ?? "user@email.com"
     }
     
     private func getDisplayName() -> String {
-        let email = getUserEmail()
-        if email.contains("@") {
-            let username = String(email.split(separator: "@").first ?? "User")
-            return username.replacingOccurrences(of: ".", with: " ")
-                          .replacingOccurrences(of: "_", with: " ")
-                          .capitalized
-        }
-        return email.capitalized
+        return UserDefaults.standard.string(forKey: "name") ?? "user"
     }
     
     private func getUserInitials() -> String {
@@ -216,7 +209,7 @@ struct SettingsView: View {
     
     private func performLogout() {
         // Clear all user data from UserDefaults
-        UserDefaults.standard.removeObject(forKey: "userEmail")
+        UserDefaults.standard.removeObject(forKey: "email")
         UserDefaults.standard.removeObject(forKey: "isLoggedIn")
         
         // Clear any other user-related data you might have stored

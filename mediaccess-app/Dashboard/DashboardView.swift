@@ -6,16 +6,16 @@ struct DashboardView: View {
     
     let onLogout: () -> Void
     
-    private var userEmail: String {
-        return UserDefaults.standard.string(forKey: "userEmail") ?? "User"
+    private var email: String {
+        return UserDefaults.standard.string(forKey: "email") ?? "User"
     }
     
     private var displayName: String {
-        if let storedName = UserDefaults.standard.string(forKey: "userName"), !storedName.isEmpty {
+        if let storedName = UserDefaults.standard.string(forKey: "name"), !storedName.isEmpty {
             return storedName
         }
         
-        let email = userEmail
+        let email = email
         if email.contains("@") {
             let username = String(email.split(separator: "@").first ?? "User")
             return username.replacingOccurrences(of: ".", with: " ")
