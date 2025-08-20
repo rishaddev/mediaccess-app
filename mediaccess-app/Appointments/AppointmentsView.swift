@@ -19,27 +19,45 @@ struct AppointmentDetail: Codable, Identifiable {
     var title: String {
         return "Consultation - \(speciality)"
     }
+}
+
+struct HomevisitDetail: Codable, Identifiable {
+        let id = UUID()
+    let address: String
+    let city: String
+    let contactNumber: String
+    let cost: String
+    let createdDate: String
+    let createdTime: String
+    let instructions: String
+    let latitude: String
+    let longitude: String
+    let patientId: String
+    let patientName: String
+    let plusCode: String
+    let services: [String]
+    let status: String
+    let visitDate: String
+    let visitTime: String
     
-    var doctor: String {
-        return doctorName
+    // Computed properties for UI compatibility
+    var title: String {
+        return "Home Visit - \(services.joined(separator: ", "))"
     }
     
-    var date: String {
-        return appointmentDate
+    var dateTime: String {
+        return "\(visitDate) \(visitTime)"
     }
-    
-    var time: String {
-        return appointmentTime
-    }
-    
-//    var id: String {
-//        return "\(patientId)-\(appointmentDate)-\(appointmentTime)-\(doctorName)"
-//    }
 }
 
 struct AppointmentsView: View {
     @State private var appointments: [AppointmentDetail] = []
     @State private var isLoadingAppointments = false
+    
+    @State private var homevisits: [HomevisitDetail] = []
+    @State private var isLoadingHomevisits = false
+    
+    
     @State private var showAlert = false
     @State private var alertMessage = ""
     
@@ -48,7 +66,7 @@ struct AppointmentsView: View {
     let onBookHomeVisit: () -> Void
     
     @State private var selectedAppointment: AppointmentDetail?
-    @State private var selectedHomeVisit: HomeVisitDetail?
+    @State private var selectedHomeVisit: HomevisitDetail?
     @State private var showAppointmentDetails = false
     @State private var showHomeVisitDetails = false
     
@@ -60,7 +78,6 @@ struct AppointmentsView: View {
         }
     }
     
-    // 3. Add these computed properties to break down the complex view
     private var mainContent: some View {
         VStack(spacing: 0) {
             headerSection
@@ -355,24 +372,40 @@ struct AppointmentsView: View {
             .foregroundColor(.gray)
     }
     
-    // 4. Add the remaining sections (simplified)
     private var homeVisitsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Home Visits")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.black)
-                Spacer()
-                Button(action: {}) {
-                    Text("View all")
-                        .font(.system(size: 14))
-                        .foregroundColor(.green)
-                }
+            homeVisitsHeader
+            homeVisitsList
+        }
+        .padding(.top, 20)
+        .onAppear {
+            fetchHomeVisits()
+        }
+    }
+    
+    private var homeVisitsHeader: some View {
+        HStack {
+            Text("Home Visits")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.black)
+            Spacer()
+            Button(action: {}) {
+                Text("View all")
+                    .font(.system(size: 14))
+                    .foregroundColor(.green)
             }
-            .padding(.horizontal, 20)
-            
-            VStack(spacing: 12) {
-                ForEach(HomeVisitDetail.sampleData, id: \.id) { homeVisit in
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private var homeVisitsList: some View {
+        VStack(spacing: 12) {
+            if isLoadingHomevisits {
+                homeVisitsLoadingView
+            } else if homevisits.isEmpty {
+                emptyHomeVisitsView
+            } else {
+                ForEach(homevisits.prefix(3)) { homeVisit in
                     HomeVisitCardView(homeVisit: homeVisit) {
                         selectedHomeVisit = homeVisit
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -381,9 +414,49 @@ struct AppointmentsView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
         }
-        .padding(.top, 20)
+        .padding(.horizontal, 20)
+    }
+    
+    private var homeVisitsLoadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .green))
+                .scaleEffect(1.2)
+            Text("Loading home visits...")
+                .font(.system(size: 14))
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .background(Color.white)
+        .cornerRadius(12)
+    }
+    
+    private var emptyHomeVisitsView: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.gray.opacity(0.1))
+                    .frame(width: 60, height: 60)
+                
+                Image(systemName: "house.badge.clock")
+                    .font(.system(size: 24))
+                    .foregroundColor(.gray)
+            }
+            
+            Text("No home visits found")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.gray)
+            
+            Text("Book your first home visit")
+                .font(.system(size: 14))
+                .foregroundColor(.gray.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .background(Color.white)
+        .cornerRadius(12)
     }
     
     private var quickActionsSection: some View {
@@ -406,10 +479,10 @@ struct AppointmentsView: View {
     }
     
     private var detailsOverlays: some View {
-        Group {
-            if showAppointmentDetails, let AppointmentDetail = selectedAppointment {
+        ZStack {
+            if showAppointmentDetails, let appointmentDetail = selectedAppointment {
                 AppointmentDetailsView(
-                    appointment: AppointmentDetail,
+                    appointment: appointmentDetail,
                     onBackTapped: {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             showAppointmentDetails = false
@@ -432,6 +505,7 @@ struct AppointmentsView: View {
             }
         }
     }
+
     
     // Helper function to get initials from name
     private func getInitials(from name: String) -> String {
@@ -487,6 +561,62 @@ struct AppointmentsView: View {
                 } catch {
                     print("Decoding error: \(error)")
                     alertMessage = "Failed to parse appointments data"
+                    showAlert = true
+                }
+            }
+        }.resume()
+    }
+    
+    private func fetchHomeVisits() {
+        guard !patientId.isEmpty else {
+            alertMessage = "Patient ID not found. Please log in again."
+            showAlert = true
+            return
+        }
+        
+        guard let url = URL(string: "https://mediaccess.vercel.app/api/home-visit/all?patientId=\(patientId)") else {
+            alertMessage = "Invalid home visit API endpoint"
+            showAlert = true
+            return
+        }
+        
+        isLoadingHomevisits = true
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                isLoadingHomevisits = false
+                
+                if let error = error {
+                    alertMessage = "Network error: \(error.localizedDescription)"
+                    showAlert = true
+                    return
+                }
+                
+                guard let data = data else {
+                    alertMessage = "No home visit data received"
+                    showAlert = true
+                    return
+                }
+                
+                do {
+                    // Updated wrapper struct to match the actual API response
+                    struct HomeVisitsResponse: Codable {
+                        let homevisits: [HomevisitDetail]
+                        let count: Int
+                        let message: String
+                    }
+                    
+                    let response = try JSONDecoder().decode(HomeVisitsResponse.self, from: data)
+                    self.homevisits = response.homevisits
+                    print("Successfully loaded \(response.count) home visits: \(response.message)")
+                    
+                } catch {
+                    print("Home visit decoding error: \(error)")
+                    // Debug: Print the raw response to see what we're actually getting
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        print("Raw response: \(responseString)")
+                    }
+                    alertMessage = "Failed to parse home visits data"
                     showAlert = true
                 }
             }
@@ -553,11 +683,11 @@ struct AppointmentCardView: View {
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.black)
                     
-                    Text(appointment.doctor)
+                    Text(appointment.doctorName)
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
                     
-                    if !appointment.date.isEmpty {
+                    if !appointment.appointmentDate.isEmpty {
                         HStack(spacing: 8) {
                             HStack(spacing: 4) {
                                 Image(systemName: "calendar")
@@ -596,7 +726,7 @@ struct AppointmentCardView: View {
 }
 
 struct HomeVisitCardView: View {
-    let homeVisit: HomeVisitDetail
+    let homeVisit: HomevisitDetail
     let action: () -> Void
     
     var body: some View {
@@ -618,18 +748,23 @@ struct HomeVisitCardView: View {
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.black)
                     
+                    Text(homeVisit.address)
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                        .lineLimit(1)
+                    
                     HStack(spacing: 8) {
                         HStack(spacing: 4) {
                             Image(systemName: "calendar")
                                 .font(.system(size: 10))
-                            Text(homeVisit.dateTime.components(separatedBy: " ").first ?? "")
+                            Text(homeVisit.visitDate)
                                 .font(.system(size: 12))
                         }
                         
                         HStack(spacing: 4) {
                             Image(systemName: "clock")
                                 .font(.system(size: 10))
-                            Text(homeVisit.dateTime.components(separatedBy: " ").last ?? "")
+                            Text(homeVisit.visitTime)
                                 .font(.system(size: 12))
                         }
                     }
@@ -637,6 +772,17 @@ struct HomeVisitCardView: View {
                     .padding(8)
                     .background(Color.green.opacity(0.1))
                     .cornerRadius(6)
+                    
+                    // Status badge
+                    Text(homeVisit.status.uppercased())
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(homeVisit.status.lowercased() == "pending" ? .orange : .green)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            (homeVisit.status.lowercased() == "pending" ? Color.orange : Color.green).opacity(0.1)
+                        )
+                        .cornerRadius(4)
                 }
                 
                 Spacer()
