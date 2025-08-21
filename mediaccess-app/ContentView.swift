@@ -143,6 +143,9 @@ struct ContentView: View {
     }
     
     private func handleLogout() {
+        // Clear session data but keep user profile data
+        UserDefaults.standard.set(false, forKey: "isLoggedIn")
+        
         withAnimation(.easeInOut(duration: 0.3)) {
             currentState = .welcome
             selectedTab = .home
@@ -151,8 +154,14 @@ struct ContentView: View {
     }
     
     private func checkLoginState() {
-        if UserDefaults.standard.bool(forKey: "isLoggedIn") {
-            currentState = .dashboard
+        // Check if user has previously registered/logged in (has saved profile data)
+        // but always require fresh authentication
+        if UserDefaults.standard.string(forKey: "userEmail") != nil {
+            // User has account data saved, go directly to login screen
+            currentState = .login
+        } else {
+            // New user, show welcome screen
+            currentState = .welcome
         }
     }
 }
