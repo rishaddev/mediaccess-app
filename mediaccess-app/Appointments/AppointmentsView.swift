@@ -30,8 +30,8 @@ struct HomevisitDetail: Codable, Identifiable {
     let createdDate: String
     let createdTime: String
     let instructions: String
-    let latitude: String
-    let longitude: String
+    let latitude: Double
+    let longitude: Double
     let patientId: String
     let patientName: String
     let plusCode: String
