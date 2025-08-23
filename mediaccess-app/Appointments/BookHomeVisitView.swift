@@ -1186,8 +1186,8 @@ struct BookHomeVisitView: View {
 }
 
 
-struct BookHomeVisitView_Previews: PreviewProvider {
-    static var previews: some View {
-        BookHomeVisitView(onBackTapped: {})
-    }
-}
+//struct BookHomeVisitView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        BookHomeVisitView(onBackTapped: {})
+//    }
+//}

@@ -70,14 +70,14 @@ struct PharmacyOrderCard: View {
 }
 
 // MARK: - Supporting Models
-struct PharmacyOrder: Identifiable {
-    let id = UUID()
-    let orderNumber: String
-    let orderDate: String
-    let status: OrderStatus
-    let progress: Double
-    let medicationName: String
-}
+//struct PharmacyOrder: Identifiable {
+//    let id = UUID()
+//    let orderNumber: String
+//    let orderDate: String
+//    let status: OrderStatus
+//    let progress: Double
+//    let medicationName: String
+//}
 
 enum OrderStatus: String, CaseIterable {
     case inTransit = "In Transit"
@@ -103,21 +103,21 @@ enum OrderStatus: String, CaseIterable {
     }
 }
 
-extension PharmacyOrder {
-    static let sampleOrders = [
-        PharmacyOrder(
-            orderNumber: "12345",
-            orderDate: "05/15/2024",
-            status: .inTransit,
-            progress: 0.7,
-            medicationName: "Amoxicillin"
-        ),
-        PharmacyOrder(
-            orderNumber: "67890",
-            orderDate: "04/20/2024",
-            status: .delivered,
-            progress: 1.0,
-            medicationName: "Lisinopril"
-        )
-    ]
-}
+//extension PharmacyOrder {
+//    static let sampleOrders = [
+//        PharmacyOrder(
+//            orderNumber: "12345",
+//            orderDate: "05/15/2024",
+//            status: .inTransit,
+//            progress: 0.7,
+//            medicationName: "Amoxicillin"
+//        ),
+//        PharmacyOrder(
+//            orderNumber: "67890",
+//            orderDate: "04/20/2024",
+//            status: .delivered,
+//            progress: 1.0,
+//            medicationName: "Lisinopril"
+//        )
+//    ]
+//}

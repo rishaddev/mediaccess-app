@@ -5,6 +5,7 @@ struct PharmacyView: View {
     @State private var showOrderHistory = false
     @State private var showOrderTracking = false
     @State private var selectedOrder: PharmacyOrder?
+    @State private var currentOrders: [PharmacyOrder] = PharmacyOrder.sampleOrders
     
     var body: some View {
         ZStack {
@@ -111,7 +112,7 @@ struct PharmacyView: View {
                             .padding(.horizontal, 20)
                             
                             VStack(spacing: 16) {
-                                ForEach(PharmacyOrder.sampleOrders, id: \.id) { order in
+                                ForEach(currentOrders, id: \.id) { order in
                                     Button(action: {
                                         selectedOrder = order
                                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -187,7 +188,11 @@ struct PharmacyView: View {
             }
         }
         .sheet(isPresented: $showNewOrder) {
-            PlaceNewOrderView()
+            PlaceNewOrderView { newOrder in
+                // Handle the new order placement
+                currentOrders.insert(newOrder, at: 0) // Add to beginning of list
+                print("New pharmacy order placed: \(newOrder.id)")
+            }
         }
         .sheet(isPresented: $showOrderHistory) {
             OrderHistoryView()
