@@ -440,7 +440,7 @@ struct AppointmentsView: View {
                     .fill(Color.gray.opacity(0.1))
                     .frame(width: 60, height: 60)
                 
-                Image(systemName: "house.badge.clock")
+                Image(systemName: "house.fill")
                     .font(.system(size: 24))
                     .foregroundColor(.gray)
             }

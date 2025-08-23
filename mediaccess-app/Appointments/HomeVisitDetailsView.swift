@@ -53,9 +53,9 @@ struct HomeVisitDetailsView: View {
         } message: {
             Text("Would you like to reschedule this home visit?")
         }
-//        .sheet(isPresented: $showMapView) {
-//            MapView(homeVisit: homeVisit)
-//        }
+        .sheet(isPresented: $showMapView) {
+            ViewMapView(homeVisit: homeVisit)
+        }
     }
     
     // MARK: - Header View
@@ -645,7 +645,7 @@ struct HomeVisitDetailsView: View {
 }
 
 // MARK: - Map View
-struct MapView2: View {
+struct ViewMapView: View {
     let homeVisit: HomevisitDetail
     @Environment(\.dismiss) private var dismiss
     

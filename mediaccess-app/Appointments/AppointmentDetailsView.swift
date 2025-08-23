@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import EventKit
 
 struct AppointmentDetailsView: View {
     let appointment: AppointmentDetail
@@ -8,6 +9,9 @@ struct AppointmentDetailsView: View {
     @State private var showCalendarAlert = false
     @State private var showCancelAlert = false
     @State private var showRescheduleAlert = false
+    @State private var showSuccessAlert = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
     
     var body: some View {
         VStack(spacing: 0) {
@@ -50,6 +54,16 @@ struct AppointmentDetailsView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Would you like to reschedule this appointment?")
+        }
+        .alert("Success", isPresented: $showSuccessAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Appointment has been added to your calendar successfully!")
+        }
+        .alert("Error", isPresented: $showErrorAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Failed to add appointment to calendar: \(errorMessage)")
         }
     }
     
@@ -478,13 +492,100 @@ struct AppointmentDetailsView: View {
         }
     }
     
-    // MARK: - Action Functions
+    // MARK: - EventKit Calendar Integration
     private func addToCalendar() {
-        // Implement calendar integration here
-        print("Adding appointment to calendar: \(appointment.title)")
-        // You can integrate with EventKit to actually add to calendar
+        let eventStore = EKEventStore()
+        
+        // Request calendar access
+        eventStore.requestAccess(to: .event) { granted, error in
+            DispatchQueue.main.async {
+                if granted && error == nil {
+                    self.createCalendarEvent(eventStore: eventStore)
+                } else {
+                    // Handle permission denied or error
+                    self.displayErrorAlert(message: error?.localizedDescription ?? "Calendar access denied")
+                }
+            }
+        }
     }
     
+    private func createCalendarEvent(eventStore: EKEventStore) {
+        let event = EKEvent(eventStore: eventStore)
+        
+        // Set event details
+        event.title = "\(appointment.title) - \(appointment.doctorName)"
+        event.notes = """
+        Patient: \(appointment.patientName)
+        Doctor: \(appointment.doctorName)
+        Specialty: \(appointment.speciality)
+        Contact: \(appointment.contactNumber)
+        Patient ID: \(appointment.patientId)
+        Status: \(appointment.status.capitalized)
+        """
+        
+        // Parse date and time
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd" // Adjust based on your date format
+        
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm" // Adjust based on your time format
+        
+        guard let appointmentDate = dateFormatter.date(from: appointment.appointmentDate),
+              let appointmentTime = timeFormatter.date(from: appointment.appointmentTime) else {
+            displayErrorAlert(message: "Failed to parse appointment date or time")
+            return
+        }
+        
+        // Combine date and time
+        let calendar = Calendar.current
+        let dateComponents = calendar.dateComponents([.year, .month, .day], from: appointmentDate)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: appointmentTime)
+        
+        var combinedComponents = DateComponents()
+        combinedComponents.year = dateComponents.year
+        combinedComponents.month = dateComponents.month
+        combinedComponents.day = dateComponents.day
+        combinedComponents.hour = timeComponents.hour
+        combinedComponents.minute = timeComponents.minute
+        
+        guard let startDate = calendar.date(from: combinedComponents) else {
+            displayErrorAlert(message: "Failed to create start date")
+            return
+        }
+        
+        event.startDate = startDate
+        // Assume 1-hour appointment duration (adjust as needed)
+        event.endDate = startDate.addingTimeInterval(3600) // 1 hour = 3600 seconds
+        
+        // Set calendar (use default calendar)
+        event.calendar = eventStore.defaultCalendarForNewEvents
+        
+        // Add location if you have clinic/hospital address
+        // event.location = "Your Clinic Address"
+        
+        // Set alarm/reminder (15 minutes before)
+        let alarm = EKAlarm(relativeOffset: -15 * 60) // 15 minutes before
+        event.addAlarm(alarm)
+        
+        // Save the event
+        do {
+            try eventStore.save(event, span: .thisEvent)
+            displaySuccessAlert()
+        } catch {
+            displayErrorAlert(message: error.localizedDescription)
+        }
+    }
+    
+    private func displaySuccessAlert() {
+        showSuccessAlert = true
+    }
+    
+    private func displayErrorAlert(message: String) {
+        errorMessage = message
+        showErrorAlert = true
+    }
+    
+    // MARK: - Other Action Functions
     private func rescheduleAppointment() {
         // Implement appointment rescheduling here
         print("Rescheduling appointment: \(appointment.id)")
