@@ -804,8 +804,8 @@ struct BookAppointmentView: View {
     }
 }
 
-struct BookAppointmentView_Previews: PreviewProvider {
-    static var previews: some View {
-        BookAppointmentView(onBackTapped: {})
-    }
-}
+//struct BookAppointmentView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        BookAppointmentView(onBackTapped: {})
+//    }
+//}
