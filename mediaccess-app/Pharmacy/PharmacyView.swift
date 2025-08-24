@@ -1,11 +1,64 @@
 import SwiftUI
 
+struct PharmacyOrder: Identifiable, Codable {
+    let id: String
+    let patientId: String
+    let patientName: String
+    let contactNumber: String
+    let address: String
+    let notes: String
+    let prescriptionImageData: String
+    let orderDate: String
+    let status: String
+    let orderItems: [String]
+    let price: String
+    let createdDate: String
+    let createdTime: String
+    
+    static let sampleOrders: [PharmacyOrder] = [
+        PharmacyOrder(
+            id: "PH001",
+            patientId: "P123",
+            patientName: "John Doe",
+            contactNumber: "+94 77 123 4567",
+            address: "123 Main Street, Colombo 07",
+            notes: "Please deliver after 6 PM",
+            prescriptionImageData: "",
+            orderDate: "2024-01-15",
+            status: "Processing",
+            orderItems: ["Paracetamol 500mg", "Vitamin D3"],
+            price: "1250.00",
+            createdDate: "2024-01-15",
+            createdTime: "14:30:00"
+        ),
+        PharmacyOrder(
+            id: "PH002",
+            patientId: "P124",
+            patientName: "Jane Smith",
+            contactNumber: "+94 71 987 6543",
+            address: "456 Galle Road, Mount Lavinia",
+            notes: "",
+            prescriptionImageData: "",
+            orderDate: "2024-01-14",
+            status: "Ready for Pickup",
+            orderItems: ["Amoxicillin 250mg"],
+            price: "850.00",
+            createdDate: "2024-01-14",
+            createdTime: "09:15:00"
+        )
+    ]
+}
+
+
 struct PharmacyView: View {
     @State private var showNewOrder = false
     @State private var showOrderHistory = false
     @State private var showOrderTracking = false
     @State private var selectedOrder: PharmacyOrder?
-    @State private var currentOrders: [PharmacyOrder] = PharmacyOrder.sampleOrders
+    @State private var currentOrders: [PharmacyOrder] = []
+    @State private var isLoadingOrders = false
+    @State private var showAlert = false
+    @State private var alertMessage = ""
     
     var body: some View {
         ZStack {
@@ -14,8 +67,7 @@ struct PharmacyView: View {
         }
         .sheet(isPresented: $showNewOrder) {
             PlaceNewOrderView { newOrder in
-                // Handle the new order placement
-                currentOrders.insert(newOrder, at: 0) // Add to beginning of list
+                currentOrders.insert(newOrder, at: 0)
                 print("New pharmacy order placed: \(newOrder.id)")
             }
         }
@@ -70,14 +122,12 @@ struct PharmacyView: View {
     
     private var heroSection: some View {
         ZStack {
-            // Background Image
-            Image("pharmacy_interior") // You'll need to add this image to your assets
+            Image("pharmacy_interior")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(height: 200)
                 .clipped()
             
-            // If you don't have the image, use this placeholder
             Rectangle()
                 .fill(
                     LinearGradient(
@@ -143,6 +193,14 @@ struct PharmacyView: View {
             currentOrdersHeader
             currentOrdersList
         }
+        .onAppear {
+            //            fetchPharmacyOrders()
+        }
+        .alert("Error", isPresented: $showAlert) {
+            Button("OK") { }
+        } message: {
+            Text(alertMessage)
+        }
     }
     
     private var currentOrdersHeader: some View {
@@ -162,23 +220,47 @@ struct PharmacyView: View {
     
     private var currentOrdersList: some View {
         VStack(spacing: 12) {
-            if currentOrders.isEmpty {
+            if isLoadingOrders {
+                loadingView
+            } else if currentOrders.isEmpty {
                 emptyOrdersView
             } else {
-                ForEach(currentOrders.prefix(3), id: \.id) { order in
-                    Button(action: {
-                        selectedOrder = order
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showOrderTracking = true
+                let filteredOrders = currentOrders.filter {
+                    $0.status == "Pending" || $0.status == "Processing" || $0.status == "Ready"
+                }
+                if filteredOrders.isEmpty {
+                    emptyOrdersView
+                } else {
+                    ForEach(filteredOrders.prefix(3), id: \.id) { order in
+                        Button(action: {
+                            selectedOrder = order
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showOrderTracking = true
+                            }
+                        }) {
+                            PharmacyOrderCard(order: order)
                         }
-                    }) {
-                        PharmacyOrderCard(order: order)
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
         .padding(.horizontal, 20)
+    }
+    
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                .scaleEffect(1.2)
+            Text("Loading orders...")
+                .font(.system(size: 14))
+                .foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .background(Color.white)
+        .cornerRadius(12)
     }
     
     private var emptyOrdersView: some View {
@@ -263,17 +345,70 @@ struct PharmacyView: View {
     private var orderTrackingOverlay: some View {
         Group {
             if showOrderTracking, let order = selectedOrder {
-                // OrderTrackingView(
-                //     order: order,
-                //     onBackTapped: {
-                //         withAnimation(.easeInOut(duration: 0.3)) {
-                //             showOrderTracking = false
-                //         }
-                //     }
-                // )
-                // .transition(.move(edge: .trailing))
+                OrderTrackingView(
+                    order: order,
+                    onBackTapped: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showOrderTracking = false
+                        }
+                    }
+                )
+                .transition(.move(edge: .trailing))
             }
         }
+        
+    }
+    
+    private var patientId: String {
+        return UserDefaults.standard.string(forKey: "id") ?? ""
+    }
+    
+    private func fetchPharmacyOrders() {
+        guard !patientId.isEmpty else {
+            alertMessage = "Patient ID not found. Please log in again."
+            showAlert = true
+            return
+        }
+        
+        guard let url = URL(string: "https://mediaccess.vercel.app/api/pharmacy-order/all?patientId=\(patientId)") else {
+            alertMessage = "Invalid API endpoint"
+            showAlert = true
+            return
+        }
+        
+        isLoadingOrders = true
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                isLoadingOrders = false
+                
+                if let error = error {
+                    alertMessage = "Network error: \(error.localizedDescription)"
+                    showAlert = true
+                    return
+                }
+                
+                guard let data = data else {
+                    alertMessage = "No data received"
+                    showAlert = true
+                    return
+                }
+                
+                do {
+                    struct PharmacyOrdersResponse: Codable {
+                        let pharmacyorders: [PharmacyOrder]
+                    }
+                    
+                    let response = try JSONDecoder().decode(PharmacyOrdersResponse.self, from: data)
+                    self.currentOrders = response.pharmacyorders
+                    
+                } catch {
+                    print("Decoding error: \(error)")
+                    alertMessage = "Failed to parse appointments data"
+                    showAlert = true
+                }
+            }
+        }.resume()
     }
 }
 

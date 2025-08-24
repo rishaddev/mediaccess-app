@@ -1,6 +1,5 @@
 import SwiftUI
 
-// ...existing code...
 struct PharmacyOrderCard: View {
     let order: PharmacyOrder
     
@@ -21,15 +20,20 @@ struct PharmacyOrderCard: View {
                         Spacer()
                     }
                     
-                    Text("Order #\(order.id)")
+                    Text("Order #")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.black)
+                    
+                    Text(order.id)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
+                        .padding(.bottom, 10)
                     
                     Text("Order Date: \(order.orderDate)")
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
                     
-                    if let name = order.customerName as String? {
+                    if let name = order.patientName as String? {
                         Text("Customer: \(name)")
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
@@ -84,21 +88,24 @@ struct PharmacyOrderCard: View {
 //}
 
 enum OrderStatus: String, CaseIterable {
-    case inTransit = "In Transit"
-    case delivered = "Delivered"
+    case pending = "Pending"
     case processing = "Processing"
-    case readyForPickup = "Ready for Pickup"
+    case ready = "Ready"
+    case delivered = "Delivered"
+    case dispatched = "Ready for Pickup"
     
     var color: Color {
         switch self {
-        case .inTransit:
+        case .pending:
+            return .orange
+        case .processing:
             return .blue
+        case .ready:
+            return .purple
         case .delivered:
             return .green
-        case .processing:
-            return .orange
-        case .readyForPickup:
-            return .purple
+        case .dispatched:
+            return .blue
         }
     }
     
@@ -106,22 +113,3 @@ enum OrderStatus: String, CaseIterable {
         return color.opacity(0.1)
     }
 }
-
-//extension PharmacyOrder {
-//    static let sampleOrders = [
-//        PharmacyOrder(
-//            orderNumber: "12345",
-//            orderDate: "05/15/2024",
-//            status: .inTransit,
-//            progress: 0.7,
-//            medicationName: "Amoxicillin"
-//        ),
-//        PharmacyOrder(
-//            orderNumber: "67890",
-//            orderDate: "04/20/2024",
-//            status: .delivered,
-//            progress: 1.0,
-//            medicationName: "Lisinopril"
-//        )
-//    ]
-//}

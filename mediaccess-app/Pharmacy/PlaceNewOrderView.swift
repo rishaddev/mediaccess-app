@@ -2,43 +2,6 @@ import SwiftUI
 import Foundation
 import UIKit
 
-struct PharmacyOrder: Identifiable {
-    let id: String
-    let orderDate: String
-    let customerName: String
-    let contactNumber: String
-    let address: String
-    let notes: String?
-    let prescriptionImage: UIImage?
-    let status: String
-    let totalAmount: Double
-    
-    static let sampleOrders: [PharmacyOrder] = [
-        PharmacyOrder(
-            id: "PH01234",
-            orderDate: "2024-05-15",
-            customerName: "John Doe",
-            contactNumber: "1234567890",
-            address: "123 Main St",
-            notes: "Urgent delivery",
-            prescriptionImage: nil,
-            status: "Processing",
-            totalAmount: 120.0
-        ),
-        PharmacyOrder(
-            id: "PH03456",
-            orderDate: "2024-05-10",
-            customerName: "Jane Smith",
-            contactNumber: "0987654321",
-            address: "456 Elm St",
-            notes: nil,
-            prescriptionImage: nil,
-            status: "Delivered",
-            totalAmount: 80.0
-        )
-    ]
-}
-
 struct PharmacyOrderRequest: Codable {
     let patientId: String
     let patientName: String
@@ -72,20 +35,15 @@ struct PlaceNewOrderView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Header
-//                headerSection
                 
                 ScrollView {
                     VStack(spacing: 24) {
                         headerSection
                         
-                        // Upload prescription
                         uploadSection
                         
-                        // Customer details
                         customerDetailsSection
                         
-                        // Notes section
                         notesSection
                         
                         Spacer(minLength: 100)
@@ -116,7 +74,6 @@ struct PlaceNewOrderView: View {
         }
     }
     
-    // MARK: - Header
     private var headerSection: some View {
         HStack {
             Button("Cancel") {
@@ -135,12 +92,8 @@ struct PlaceNewOrderView: View {
             Color.clear
                 .frame(width: 50)
         }
-//        .padding(.horizontal, 20)
-//        .padding(.vertical, 16)
-//        .background(Color.white)
     }
     
-    // MARK: - Upload Section
     private var uploadSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Upload Prescription")
@@ -379,16 +332,21 @@ struct PlaceNewOrderView: View {
                     
                     if let httpResponse = response as? HTTPURLResponse {
                         if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                            // ...inside placeOrder()...
                             let newOrder = PharmacyOrder(
                                 id: self.generateOrderId(),
-                                orderDate: self.formatCurrentDate(),
-                                customerName: self.customerName,
+                                patientId: self.patientId,
+                                patientName: self.customerName,
                                 contactNumber: self.contactNumber,
                                 address: self.address,
-                                notes: self.notes.isEmpty ? nil : self.notes,
-                                prescriptionImage: self.selectedImage,
+                                notes: self.notes,
+                                prescriptionImageData: prescriptionImageData ?? "",
+                                orderDate: self.formatCurrentDate(),
                                 status: "Processing",
-                                totalAmount: 0.0
+                                orderItems: [],
+                                price: "0.00",
+                                createdDate: "",
+                                createdTime: ""
                             )
                             
                             self.onOrderPlaced?(newOrder)
@@ -414,7 +372,7 @@ struct PlaceNewOrderView: View {
             showAlert = true
         }
     }
-
+    
 }
 
 // MARK: - Image Picker
