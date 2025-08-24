@@ -1,7 +1,7 @@
 import SwiftUI
 import Foundation
+import UIKit
 
-// MARK: - PharmacyOrder Model
 struct PharmacyOrder: Identifiable {
     let id: String
     let orderDate: String
@@ -12,9 +12,33 @@ struct PharmacyOrder: Identifiable {
     let prescriptionImage: UIImage?
     let status: String
     let totalAmount: Double
+    
+    static let sampleOrders: [PharmacyOrder] = [
+        PharmacyOrder(
+            id: "PH01234",
+            orderDate: "2024-05-15",
+            customerName: "John Doe",
+            contactNumber: "1234567890",
+            address: "123 Main St",
+            notes: "Urgent delivery",
+            prescriptionImage: nil,
+            status: "Processing",
+            totalAmount: 120.0
+        ),
+        PharmacyOrder(
+            id: "PH03456",
+            orderDate: "2024-05-10",
+            customerName: "Jane Smith",
+            contactNumber: "0987654321",
+            address: "456 Elm St",
+            notes: nil,
+            prescriptionImage: nil,
+            status: "Delivered",
+            totalAmount: 80.0
+        )
+    ]
 }
 
-// MARK: - API Request Model
 struct PharmacyOrderRequest: Codable {
     let patientId: String
     let patientName: String
@@ -49,10 +73,12 @@ struct PlaceNewOrderView: View {
         NavigationView {
             VStack(spacing: 0) {
                 // Header
-                headerSection
+//                headerSection
                 
                 ScrollView {
                     VStack(spacing: 24) {
+                        headerSection
+                        
                         // Upload prescription
                         uploadSection
                         
@@ -109,9 +135,9 @@ struct PlaceNewOrderView: View {
             Color.clear
                 .frame(width: 50)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(Color.white)
+//        .padding(.horizontal, 20)
+//        .padding(.vertical, 16)
+//        .background(Color.white)
     }
     
     // MARK: - Upload Section
@@ -300,18 +326,25 @@ struct PlaceNewOrderView: View {
         isPlacingOrder = true
         saveToUserDefaults()
         
-        guard let url = URL(string: "https://mediaccess.vercel.app/api/pharmacy/add") else {
+        guard let url = URL(string: "https://mediaccess.vercel.app/api/pharmacy-order/add") else {
             isPlacingOrder = false
             alertMessage = "Invalid API endpoint"
             showAlert = true
             return
         }
         
-        // Convert image to base64
+        // Convert image to compressed base64 (under ~1 MB)
         var prescriptionImageData: String?
-        if let image = selectedImage,
-           let imageData = image.jpegData(compressionQuality: 0.7) {
-            prescriptionImageData = imageData.base64EncodedString()
+        if let image = selectedImage {
+            // First try with medium resize & compression
+            if let compressedData = image.resized(toMaxWidth: 800, compressionQuality: 0.5) {
+                if compressedData.count < 900_000 { // safe margin before 1 MB
+                    prescriptionImageData = compressedData.base64EncodedString()
+                } else if let smallerData = image.resized(toMaxWidth: 600, compressionQuality: 0.4) {
+                    // fallback if still too large
+                    prescriptionImageData = smallerData.base64EncodedString()
+                }
+            }
         }
         
         // Create request object
@@ -335,7 +368,6 @@ struct PlaceNewOrderView: View {
             request.httpBody = jsonData
             
             URLSession.shared.dataTask(with: request) { data, response, error in
-                // Use a simple async call without trailing closure syntax issues
                 OperationQueue.main.addOperation {
                     self.isPlacingOrder = false
                     
@@ -347,7 +379,6 @@ struct PlaceNewOrderView: View {
                     
                     if let httpResponse = response as? HTTPURLResponse {
                         if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-                            // Success
                             let newOrder = PharmacyOrder(
                                 id: self.generateOrderId(),
                                 orderDate: self.formatCurrentDate(),
@@ -363,7 +394,6 @@ struct PlaceNewOrderView: View {
                             self.onOrderPlaced?(newOrder)
                             self.alertMessage = "🎉 Order placed successfully!\n\nOrder ID: \(newOrder.id)\nStatus: Processing\n\nYou will be contacted by the pharmacy team soon."
                         } else {
-                            // Handle server errors
                             if let data = data,
                                let errorMessage = String(data: data, encoding: .utf8) {
                                 self.alertMessage = "Order failed: \(errorMessage)"
@@ -384,6 +414,7 @@ struct PlaceNewOrderView: View {
             showAlert = true
         }
     }
+
 }
 
 // MARK: - Image Picker
@@ -422,5 +453,19 @@ struct ImagePicker: UIViewControllerRepresentable {
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             parent.dismiss()
         }
+    }
+}
+
+extension UIImage {
+    func resized(toMaxWidth maxWidth: CGFloat, compressionQuality: CGFloat = 0.5) -> Data? {
+        let scale = maxWidth / max(size.width, size.height)
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        self.draw(in: CGRect(origin: .zero, size: newSize))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return resizedImage?.jpegData(compressionQuality: compressionQuality)
     }
 }

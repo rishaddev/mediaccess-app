@@ -9,183 +9,8 @@ struct PharmacyView: View {
     
     var body: some View {
         ZStack {
-            // Main Pharmacy View
-            VStack(spacing: 0) {
-                // Header
-                Text("Pharmacy")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.black)
-                    .padding(.top, 20)
-                    .padding(.bottom, 10)
-                
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Hero Section
-                        ZStack {
-                            // Background Image
-                            Image("pharmacy_interior") // You'll need to add this image to your assets
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(height: 280)
-                                .clipped()
-    //                            .overlay(
-    //                                // Dark overlay for text readability
-    //                                Color.black.opacity(0.3)
-    //                            )
-                            
-                            // If you don't have the image, use this placeholder
-    //                        Rectangle()
-    //                            .fill(
-    //                                LinearGradient(
-    //                                    gradient: Gradient(colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.6)]),
-    //                                    startPoint: .top,
-    //                                    endPoint: .bottom
-    //                                )
-    //                            )
-    //                            .frame(height: 280)
-    //                            .overlay(
-    //                                // Pharmacy shelves illustration
-    //                                VStack {
-    //                                    HStack {
-    //                                        Rectangle()
-    //                                            .fill(Color.white.opacity(0.2))
-    //                                            .frame(width: 60, height: 120)
-    //                                        Spacer()
-    //                                        Rectangle()
-    //                                            .fill(Color.white.opacity(0.2))
-    //                                            .frame(width: 60, height: 120)
-    //                                    }
-    //                                    .padding(.horizontal, 40)
-    //                                    Spacer()
-    //                                }
-    //                            )
-                            
-                            VStack(alignment: .leading, spacing: 16) {
-                                Spacer()
-                                
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Your Health, Our Priority")
-                                        .font(.system(size: 28, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.leading)
-                                    
-                                    Text("Order your prescriptions online for quick and easy refills.")
-                                        .font(.system(size: 16))
-                                        .foregroundColor(.white.opacity(0.9))
-                                        .multilineTextAlignment(.leading)
-                                }
-                                
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .cornerRadius(12)
-                        .padding(.horizontal, 20)
-                        
-                        // Place New Order Button
-                        Button(action: {
-                            showNewOrder = true
-                        }) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 16, weight: .semibold))
-                                Text("Place New Order")
-                                    .font(.system(size: 16, weight: .semibold))
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(Color.blue)
-                            .cornerRadius(12)
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        // Current Orders Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("Current Orders")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.black)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
-                            
-                            VStack(spacing: 16) {
-                                ForEach(currentOrders, id: \.id) { order in
-                                    Button(action: {
-                                        selectedOrder = order
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            showOrderTracking = true
-                                        }
-                                    }) {
-                                        PharmacyOrderCard(order: order)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                        
-                        // Quick Actions Section
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack {
-                                Text("Quick Actions")
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(.black)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
-                            
-                            VStack(spacing: 12) {
-                                Button(action: {
-                                    showOrderHistory = true
-                                }) {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "clock.arrow.circlepath")
-                                            .font(.system(size: 20))
-                                            .foregroundColor(.blue)
-                                            .frame(width: 24, height: 24)
-                                        
-                                        Text("Order History")
-                                            .font(.system(size: 16, weight: .medium))
-                                            .foregroundColor(.black)
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 14))
-                                            .foregroundColor(.gray)
-                                    }
-                                    .padding(16)
-                                    .background(Color.gray.opacity(0.05))
-                                    .cornerRadius(12)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                            .padding(.horizontal, 20)
-                        }
-                        
-                        Spacer(minLength: 100)
-                    }
-                    .padding(.top, 10)
-                }
-            }
-            .background(Color.white)
-            .opacity(showOrderTracking ? 0 : 1)
-            
-            // Order Tracking Details Overlay
-            if showOrderTracking, let order = selectedOrder {
-                OrderTrackingView(
-                    order: order,
-                    onBackTapped: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showOrderTracking = false
-                        }
-                    }
-                )
-                .transition(.move(edge: .trailing))
-            }
+            mainContent
+            orderTrackingOverlay
         }
         .sheet(isPresented: $showNewOrder) {
             PlaceNewOrderView { newOrder in
@@ -196,6 +21,258 @@ struct PharmacyView: View {
         }
         .sheet(isPresented: $showOrderHistory) {
             OrderHistoryView()
+        }
+    }
+    
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            headerSection
+            scrollContent
+        }
+        .background(Color(.systemGroupedBackground))
+        .opacity(showOrderTracking ? 0 : 1)
+    }
+    
+    private var headerSection: some View {
+        HStack {
+            Text("Pharmacy")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(.black)
+            
+            Spacer()
+            
+            Button(action: {}) {
+                Image(systemName: "bell")
+                    .font(.system(size: 14))
+                    .foregroundColor(.black)
+            }
+            .padding(10)
+            .overlay(
+                Circle()
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+            )
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+    }
+    
+    private var scrollContent: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                heroSection
+                placeOrderSection
+                currentOrdersSection
+                quickActionsSection
+                Spacer(minLength: 100)
+            }
+        }
+    }
+    
+    private var heroSection: some View {
+        ZStack {
+            // Background Image
+            Image("pharmacy_interior") // You'll need to add this image to your assets
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(height: 200)
+                .clipped()
+            
+            // If you don't have the image, use this placeholder
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.blue.opacity(0.7), Color.blue.opacity(0.9)]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 200)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Your Health, Our Priority")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                
+                Text("Order your prescriptions online for quick and easy refills.")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white.opacity(0.9))
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .cornerRadius(12)
+        .padding(.horizontal, 20)
+    }
+    
+    private var placeOrderSection: some View {
+        Button(action: {
+            showNewOrder = true
+        }) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: 40, height: 40)
+                    
+                    Image(systemName: "plus")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                }
+                
+                Text("Place New Order")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .padding(16)
+            .background(Color.blue)
+            .cornerRadius(12)
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private var currentOrdersSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            currentOrdersHeader
+            currentOrdersList
+        }
+    }
+    
+    private var currentOrdersHeader: some View {
+        HStack {
+            Text("Current Orders")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.black)
+            Spacer()
+            Button(action: {}) {
+                Text("View all")
+                    .font(.system(size: 14))
+                    .foregroundColor(.blue)
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private var currentOrdersList: some View {
+        VStack(spacing: 12) {
+            if currentOrders.isEmpty {
+                emptyOrdersView
+            } else {
+                ForEach(currentOrders.prefix(3), id: \.id) { order in
+                    Button(action: {
+                        selectedOrder = order
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showOrderTracking = true
+                        }
+                    }) {
+                        PharmacyOrderCard(order: order)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private var emptyOrdersView: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color.gray.opacity(0.1))
+                    .frame(width: 60, height: 60)
+                
+                Image(systemName: "pills.fill")
+                    .font(.system(size: 24))
+                    .foregroundColor(.gray)
+            }
+            
+            Text("No current orders")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.gray)
+            
+            Text("Place your first order")
+                .font(.system(size: 14))
+                .foregroundColor(.gray.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .background(Color.white)
+        .cornerRadius(12)
+    }
+    
+    private var quickActionsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            quickActionsHeader
+            quickActionsList
+        }
+    }
+    
+    private var quickActionsHeader: some View {
+        HStack {
+            Text("Quick Actions")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.black)
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private var quickActionsList: some View {
+        VStack(spacing: 12) {
+            Button(action: {
+                showOrderHistory = true
+            }) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.blue.opacity(0.1))
+                            .frame(width: 40, height: 40)
+                        
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 18))
+                            .foregroundColor(.blue)
+                    }
+                    
+                    Text("Order History")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.black)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(12)
+                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    private var orderTrackingOverlay: some View {
+        Group {
+            if showOrderTracking, let order = selectedOrder {
+                // OrderTrackingView(
+                //     order: order,
+                //     onBackTapped: {
+                //         withAnimation(.easeInOut(duration: 0.3)) {
+                //             showOrderTracking = false
+                //         }
+                //     }
+                // )
+                // .transition(.move(edge: .trailing))
+            }
         }
     }
 }

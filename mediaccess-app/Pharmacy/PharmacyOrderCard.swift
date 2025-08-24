@@ -1,5 +1,6 @@
 import SwiftUI
 
+// ...existing code...
 struct PharmacyOrderCard: View {
     let order: PharmacyOrder
     
@@ -9,24 +10,30 @@ struct PharmacyOrderCard: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(order.status.rawValue)
+                        Text(order.status)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(order.status.color)
+                            .foregroundColor(.blue)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(order.status.backgroundColor)
+                            .background(Color.blue.opacity(0.1))
                             .cornerRadius(6)
                         
                         Spacer()
                     }
                     
-                    Text("Order #\(order.orderNumber)")
+                    Text("Order #\(order.id)")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.black)
                     
                     Text("Order Date: \(order.orderDate)")
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
+                    
+                    if let name = order.customerName as String? {
+                        Text("Customer: \(name)")
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
+                    }
                 }
                 
                 Spacer()
@@ -44,18 +51,14 @@ struct PharmacyOrderCard: View {
             }
             .padding(16)
             
-            // Progress Bar
+            // Status Bar (no progress field in real model)
             VStack(spacing: 8) {
                 HStack {
-                    Text(order.status.rawValue)
+                    Text(order.status)
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.black)
                     Spacer()
                 }
-                
-                ProgressView(value: order.progress)
-                    .progressViewStyle(LinearProgressViewStyle(tint: order.status.color))
-                    .scaleEffect(x: 1, y: 2, anchor: .center)
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
@@ -68,6 +71,7 @@ struct PharmacyOrderCard: View {
         )
     }
 }
+// ...existing code...
 
 // MARK: - Supporting Models
 //struct PharmacyOrder: Identifiable {
