@@ -1,18 +1,41 @@
 import SwiftUI
 
+struct HospitalCharge {
+    let id = UUID()
+    let testName: String
+    let price: Double
+    let iconName: String
+    let category: String
+}
+
 struct HospitalChargesView: View {
     @Environment(\.dismiss) private var dismiss
     
+    private let charges: [HospitalCharge] = [
+        HospitalCharge(testName: "Blood Test", price: 85.00, iconName: "drop.fill", category: "Laboratory"),
+        HospitalCharge(testName: "X-Ray Chest", price: 150.00, iconName: "xmark.seal.fill", category: "Radiology"),
+        HospitalCharge(testName: "ECG", price: 120.00, iconName: "waveform.path.ecg", category: "Cardiology"),
+        HospitalCharge(testName: "MRI Scan", price: 850.00, iconName: "brain.head.profile", category: "Radiology"),
+        HospitalCharge(testName: "Ultrasound", price: 200.00, iconName: "dot.radiowaves.up.forward", category: "Radiology"),
+        HospitalCharge(testName: "CT Scan", price: 650.00, iconName: "circle.dotted", category: "Radiology")
+    ]
+    
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Button(action: {
                     dismiss()
                 }) {
-                    Image(systemName: "arrow.left")
-                        .font(.title2)
-                        .foregroundColor(.black)
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 40, height: 40)
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black)
+                    }
                 }
                 
                 Spacer()
@@ -23,55 +46,74 @@ struct HospitalChargesView: View {
                 
                 Spacer()
                 
-                // Empty space to balance the header
-                Image(systemName: "arrow.left")
-                    .font(.title2)
-                    .foregroundColor(.clear)
+                Circle()
+                    .fill(Color.clear)
+                    .frame(width: 40, height: 40)
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
             
             ScrollView {
-                VStack(spacing: 16) {
-                    ForEach(0..<3, id: \.self) { index in
+                VStack(spacing: 0) {
+                    ForEach(charges, id: \.id) { charge in
                         HStack(spacing: 16) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Test Name")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
+                            ZStack {
+                                Circle()
+                                    .fill(Color.blue.opacity(0.1))
+                                    .frame(width: 50, height: 50)
                                 
-                                Text("$250")
-                                    .font(.system(size: 20, weight: .bold))
+                                Image(systemName: charge.iconName)
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.blue)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(charge.category)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.blue)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(4)
+                                
+                                Text(charge.testName)
+                                    .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(.black)
                                 
-                                Text("Price")
+                                Text("Medical Test")
                                     .font(.system(size: 14))
                                     .foregroundColor(.gray)
                             }
                             
                             Spacer()
                             
-                            // Hospital Image
-                            Image("hospital_building")
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 120, height: 80)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .background(Color.blue.opacity(0.2))
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text("$\(charge.price, specifier: "%.2f")")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.black)
+                                
+                                Text("Price")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
+                            }
                         }
+                        .padding(16)
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
                         .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
                         
-                        if index < 2 {
-                            Divider()
-                                .padding(.horizontal, 20)
+                        if charge.id != charges.last?.id {
+                            Spacer()
+                                .frame(height: 12)
                         }
                     }
                 }
                 .padding(.top, 20)
+                .padding(.bottom, 20)
             }
         }
-        .background(Color.white)
+        .background(Color(.systemGroupedBackground))
     }
 }
 

@@ -8,14 +8,20 @@ struct HospitalInformationView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Button(action: {
                     dismiss()
                 }) {
-                    Image(systemName: "arrow.left")
-                        .font(.title2)
-                        .foregroundColor(.black)
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 40, height: 40)
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.black)
+                    }
                 }
                 
                 Spacer()
@@ -26,50 +32,53 @@ struct HospitalInformationView: View {
                 
                 Spacer()
                 
-                // Empty space to balance the header
-                Image(systemName: "arrow.left")
-                    .font(.title2)
-                    .foregroundColor(.clear)
+                Circle()
+                    .fill(Color.clear)
+                    .frame(width: 40, height: 40)
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
             
-            VStack(spacing: 0) {
-                HospitalInfoRow(
-                    icon: "dollarsign.circle",
-                    title: "Hospital Charges",
-                    action: {
-                        showingCharges = true
-                    }
-                )
-                
-                Divider()
-                    .padding(.leading, 70)
-                
-                HospitalInfoRow(
-                    icon: "location",
-                    title: "Locations",
-                    action: {
-                        showingLocations = true
-                    }
-                )
-                
-                Divider()
-                    .padding(.leading, 70)
-                
-                HospitalInfoRow(
-                    icon: "questionmark.circle",
-                    title: "Help & Support",
-                    action: {
-                        showingHelpSupport = true
-                    }
-                )
+            ScrollView {
+                VStack(spacing: 0) {
+                    HospitalInfoCard(
+                        icon: "dollarsign.circle.fill",
+                        title: "Hospital Charges",
+                        subtitle: "View medical test prices",
+                        action: {
+                            showingCharges = true
+                        }
+                    )
+                    
+                    Spacer()
+                        .frame(height: 12)
+                    
+                    HospitalInfoCard(
+                        icon: "location.fill",
+                        title: "Locations",
+                        subtitle: "Find nearby hospitals",
+                        action: {
+                            showingLocations = true
+                        }
+                    )
+                    
+                    Spacer()
+                        .frame(height: 12)
+                    
+                    HospitalInfoCard(
+                        icon: "questionmark.circle.fill",
+                        title: "Help & Support",
+                        subtitle: "Get assistance and support",
+                        action: {
+                            showingHelpSupport = true
+                        }
+                    )
+                }
+                .padding(.top, 20)
+                .padding(.bottom, 20)
             }
-            .padding(.top, 30)
-            
-            Spacer()
         }
-        .background(Color.white)
+        .background(Color(.systemGroupedBackground))
         .fullScreenCover(isPresented: $showingCharges) {
             HospitalChargesView()
         }
@@ -82,22 +91,34 @@ struct HospitalInformationView: View {
     }
 }
 
-struct HospitalInfoRow: View {
+struct HospitalInfoCard: View {
     let icon: String
     let title: String
+    let subtitle: String
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(.black)
-                    .frame(width: 30)
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.1))
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 20))
+                        .foregroundColor(.blue)
+                }
                 
-                Text(title)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.black)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.black)
+                    
+                    Text(subtitle)
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
                 
                 Spacer()
                 
@@ -105,9 +126,16 @@ struct HospitalInfoRow: View {
                     .font(.system(size: 14))
                     .foregroundColor(.gray)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
         .buttonStyle(PlainButtonStyle())
+        .padding(.horizontal, 20)
     }
+}
+
+#Preview {
+    HospitalInformationView()
 }

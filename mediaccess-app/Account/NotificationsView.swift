@@ -10,7 +10,6 @@ struct NotificationsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Button(action: {
                     dismiss()
@@ -28,7 +27,6 @@ struct NotificationsView: View {
                 
                 Spacer()
                 
-                // Empty space to balance the header
                 Image(systemName: "arrow.left")
                     .font(.title2)
                     .foregroundColor(.clear)
@@ -38,7 +36,6 @@ struct NotificationsView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Notification Settings Section
                     VStack(alignment: .leading, spacing: 16) {
                         
                         VStack(spacing: 0) {

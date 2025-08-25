@@ -15,6 +15,11 @@ struct AddFamilyMemberView: View {
     
     let genders = ["Male", "Female", "Other"]
     
+    private var primaryUserId: String {
+        return UserDefaults.standard.string(forKey: "id") ?? ""
+    }
+    
+    
     private var primaryUserEmail: String {
         return UserDefaults.standard.string(forKey: "email") ?? ""
     }

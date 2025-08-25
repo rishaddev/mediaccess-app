@@ -44,7 +44,6 @@ struct LoginView: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            // Header
             HStack {
                 Button(action: {
                     onBackTapped()
@@ -87,7 +86,6 @@ struct LoginView: View {
                         .autocapitalization(.none)
                 }
                 
-                // Password
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Password")
                         .font(.system(size: 16, weight: .medium))
@@ -105,9 +103,7 @@ struct LoginView: View {
             
             Spacer()
             
-            // Login Buttons
             VStack(spacing: 16) {
-                // Log In Button
                 Button(action: {
                     loginUser()
                 }) {
@@ -128,10 +124,6 @@ struct LoginView: View {
                 }
                 .disabled(isLoading)
                 
-//                Text(text).bold().padding()
-                
-                // Face ID Button
-                // Face ID Button
                 Button(action: {
                     handleBiometricAuth()
                 }) {
@@ -153,12 +145,11 @@ struct LoginView: View {
                     .background(isFaceIDLoading ? Color.green.opacity(0.7) : Color.green)
                     .cornerRadius(12)
                 }
-                .disabled(isFaceIDLoading) // only disable when loading
+                .disabled(isFaceIDLoading)
 
             }
             .padding(.horizontal, 20)
             
-            // Sign Up Link
             VStack(spacing: 8) {
                 Text("No account?")
                     .font(.system(size: 14))
@@ -235,10 +226,8 @@ struct LoginView: View {
                     return
                 }
                 
-                // Handle HTTP response
                 if let httpResponse = response as? HTTPURLResponse {
                     if httpResponse.statusCode == 200 {
-                        // Success - parse the response
                         if let data = data {
                             do {
                                 let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
@@ -289,38 +278,30 @@ struct LoginView: View {
     
     
     private func handleBiometricAuth() {
-        // Check if biometric authentication is available
         guard biometricAuthenticationAvailable() else {
             showAlert(title: "Face ID Not Available", message: "Biometric authentication is not available on this device.")
             return
         }
         
-        // Set loading state for biometric authentication
         isFaceIDLoading = true
         
-        // Add haptic feedback for better UX
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
         
         authenticateWithBiometrics { result in
             DispatchQueue.main.async {
-                // Reset loading state
                 self.isFaceIDLoading = false
                 
                 switch result {
                 case .success(_):
-                    // Success haptic feedback
                     let successFeedback = UINotificationFeedbackGenerator()
                     successFeedback.notificationOccurred(.success)
                     
-                    // Trigger navigation after successful biometric auth
                     self.checkUserOnboardingStatus()
                 case .failure(let error):
-                    // Error haptic feedback
                     let errorFeedback = UINotificationFeedbackGenerator()
                     errorFeedback.notificationOccurred(.error)
                     
-                    // Handle specific biometric errors
                     let errorMessage = self.handleBiometricError(error)
                     self.showAlert(title: "Face ID Authentication Failed", message: errorMessage)
                 }
@@ -341,11 +322,9 @@ struct LoginView: View {
         let context = LAContext()
         var error: NSError?
         
-        // Configure context settings for better reliability
         context.localizedFallbackTitle = "Use Passcode"
         context.localizedCancelTitle = "Cancel"
         
-        // First check if biometric authentication is available
         let canEvaluate = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
         
         print("Can evaluate biometrics: \(canEvaluate)")
@@ -364,12 +343,10 @@ struct LoginView: View {
             return
         }
         
-        // Set the reason for authentication
         let reason = "Use Face ID to log into your account"
         
         print("Starting biometric evaluation...")
         
-        // Evaluate the policy
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
             print("Biometric evaluation completed - Success: \(success)")
             
@@ -431,7 +408,6 @@ struct LoginView: View {
         return context.biometryType
     }
     
-    // Helper method for showing alerts
     private func showAlert(title: String, message: String) {
         alertTitle = title
         alertMessage = message
@@ -439,7 +415,6 @@ struct LoginView: View {
     }
 }
 
-// Custom error enum for biometric authentication
 enum BiometricError: Error {
     case notAvailable
     case authenticationFailed

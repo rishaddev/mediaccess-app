@@ -11,7 +11,6 @@ struct PrivacySettingsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Button(action: {
                     dismiss()
@@ -29,7 +28,6 @@ struct PrivacySettingsView: View {
                 
                 Spacer()
                 
-                // Empty space to balance the header
                 Image(systemName: "arrow.left")
                     .font(.title2)
                     .foregroundColor(.clear)
@@ -39,7 +37,6 @@ struct PrivacySettingsView: View {
             
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Change Password Section
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Change Password")
                             .font(.system(size: 20, weight: .bold))
@@ -48,7 +45,6 @@ struct PrivacySettingsView: View {
                             .padding(.top, 30)
                         
                         VStack(spacing: 16) {
-                            // Current Password Field
                             HStack {
                                 if showCurrentPassword {
                                     TextField("Current Password", text: $currentPassword)
@@ -73,7 +69,6 @@ struct PrivacySettingsView: View {
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(8)
                             
-                            // New Password Field
                             HStack {
                                 if showNewPassword {
                                     TextField("New Password", text: $newPassword)

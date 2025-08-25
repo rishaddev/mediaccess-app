@@ -736,11 +736,11 @@ struct HomeVisitCardView: View {
     }
 }
 
-//struct AppointmentsView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        AppointmentsView(
-//            onBookAppointment: {},
-//            onBookHomeVisit: {}
-//        )
-//    }
-//}
+struct AppointmentsView_Previews: PreviewProvider {
+    static var previews: some View {
+        AppointmentsView(
+            onBookAppointment: {},
+            onBookHomeVisit: {}
+        )
+    }
+}

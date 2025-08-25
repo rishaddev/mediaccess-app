@@ -194,7 +194,7 @@ struct PharmacyView: View {
             currentOrdersList
         }
         .onAppear {
-            //            fetchPharmacyOrders()
+            fetchPharmacyOrders()
         }
         .alert("Error", isPresented: $showAlert) {
             Button("OK") { }
@@ -412,8 +412,8 @@ struct PharmacyView: View {
     }
 }
 
-struct PharmacyView_Previews: PreviewProvider {
-    static var previews: some View {
-        PharmacyView()
-    }
-}
+//struct PharmacyView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        PharmacyView()
+//    }
+//}

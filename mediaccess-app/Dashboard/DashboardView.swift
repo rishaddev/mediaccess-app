@@ -3,6 +3,10 @@ import SwiftUI
 struct DashboardView: View {
     @State private var showingProfile = false
     @State private var showingHospitalInfo = false
+    @State private var showBookAppointment = false
+    @State private var showBookHomeVisit = false
+    @State private var showServices = false
+    @State private var showPlaceNewOrder = false
     
     let onLogout: () -> Void
     
@@ -31,7 +35,6 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         HStack {
-                            // Profile Image
                             Button(action: {
                                 showingProfile = true
                             }) {
@@ -78,8 +81,6 @@ struct DashboardView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                         
-                        
-                        // Next Appointment Card
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Next Appointment")
@@ -94,7 +95,6 @@ struct DashboardView: View {
                                     .frame(height: 120)
                                 
                                 HStack {
-                                    // Doctor Image
                                     AsyncImage(url: URL(string: "https://via.placeholder.com/80x80")) { image in
                                         image
                                             .resizable()
@@ -121,7 +121,6 @@ struct DashboardView: View {
                                             .foregroundColor(.white.opacity(0.8))
                                             .padding(.bottom, 20)
                                         
-//                                        Spacer()
                                         
                                         HStack {
                                             HStack(spacing: 4) {
@@ -151,16 +150,22 @@ struct DashboardView: View {
                         }
                         .padding(.horizontal, 20)
                         
-                        // Service Icons
                         HStack(spacing: 20) {
-                            ServiceIconView(icon: "stethoscope", title: "Appointment", color: .blue)
-                            ServiceIconView(icon: "house.fill", title: "Home Visit", color: .blue)
-                            ServiceIconView(icon: "cross.case.fill", title: "Services", color: .blue)
-                            ServiceIconView(icon: "pills.fill", title: "Pharmacy", color: .blue)
+                            Button(action: { showBookAppointment = true }) {
+                                ServiceIconView(icon: "stethoscope", title: "Appointment", color: .blue)
+                            }
+                            Button(action: { showBookHomeVisit = true }) {
+                                ServiceIconView(icon: "house.fill", title: "Home Visit", color: .blue)
+                            }
+                            Button(action: { showServices = true }) {
+                                ServiceIconView(icon: "cross.case.fill", title: "Services", color: .blue)
+                            }
+                            Button(action: { showPlaceNewOrder = true }) {
+                                ServiceIconView(icon: "pills.fill", title: "Pharmacy", color: .blue)
+                            }
                         }
                         .padding(.horizontal, 20)
                         
-                        // Recent Orders
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("Recent Orders")
@@ -188,7 +193,6 @@ struct DashboardView: View {
                         }
                         .padding(.top, 20)
                         
-                        // Promotional Banner
                         ZStack {
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Color.blue)
@@ -253,10 +257,21 @@ struct DashboardView: View {
             .fullScreenCover(isPresented: $showingHospitalInfo) {
                 HospitalInformationView()
             }
+            .fullScreenCover(isPresented: $showBookAppointment) {
+                BookAppointmentView(onBackTapped: { showBookAppointment = false })
+            }
+            .fullScreenCover(isPresented: $showBookHomeVisit) {
+                BookHomeVisitView(onBackTapped: { showBookHomeVisit = false })
+            }
+            .fullScreenCover(isPresented: $showServices) {
+                HospitalInformationView() // You will create this view
+            }
+            .fullScreenCover(isPresented: $showPlaceNewOrder) {
+                PlaceNewOrderView()
+            }
         }
     }
     
-    // Helper function to get initials from name
     private func getInitials(from name: String) -> String {
         let components = name.components(separatedBy: " ")
         let initials = components.compactMap { $0.first }.map { String($0) }
@@ -353,31 +368,8 @@ struct OrderCardView: View {
         .padding(16)
         .background(Color.white)
         .cornerRadius(12)
-//        .overlay(
-//            RoundedRectangle(cornerRadius: 12)
-//                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-//        )
     }
 }
-
-//struct TabBarItem: View {
-//    let icon: String
-//    let title: String
-//    let isSelected: Bool
-//
-//    var body: some View {
-//        VStack(spacing: 4) {
-//            Image(systemName: icon)
-//                .font(.system(size: 20))
-//                .foregroundColor(isSelected ? .blue : .gray)
-//
-//            Text(title)
-//                .font(.system(size: 10))
-//                .foregroundColor(isSelected ? .blue : .gray)
-//        }
-//        .frame(maxWidth: .infinity)
-//    }
-//}
 
 #Preview {
     DashboardView(onLogout: {})
