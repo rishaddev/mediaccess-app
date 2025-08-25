@@ -20,10 +20,18 @@ struct Patient: Codable {
     var dob: String?
     var gender: String?
     var emergencyContact: [EmergencyContact]?
+    var dependent: [Dependent]?
     
     var phoneNumber: String? {
         return phone ?? contactNumber
     }
+}
+
+struct Dependent: Codable, Identifiable {
+    let id: String
+    let name: String
+    let relationship: String
+    let dob: String
 }
 
 struct LoginView: View {
@@ -274,6 +282,11 @@ struct LoginView: View {
         if let patientData = try? JSONEncoder().encode(patient) {
             UserDefaults.standard.set(patientData, forKey: "patientData")
         }
+
+        if let dependents = patient.dependent,
+       let dependentsData = try? JSONEncoder().encode(dependents) {
+        UserDefaults.standard.set(dependentsData, forKey: "dependents")
+    }
     }
     
     

@@ -1,5 +1,19 @@
 import SwiftUI
 
+struct FamilyMember: Identifiable {
+    let id: String
+    let name: String
+    let relationship: String
+    let avatarColor: Color
+    
+    init(dependent: Dependent, color: Color = .blue.opacity(0.7)) {
+        self.id = dependent.id
+        self.name = dependent.name
+        self.relationship = dependent.relationship
+        self.avatarColor = color
+    }
+}
+
 struct FamilyView: View {
     @State private var showAddMember = false
     @State private var showAppointmentDetails = false
@@ -9,10 +23,18 @@ struct FamilyView: View {
     @State private var selectedLabReport: LabReport?
     @State private var selectedMember: FamilyMember?
     
+    @State private var familyMembers: [FamilyMember] = []
+    @State private var familyAppointments: [PastAppointment] = []
+    @State private var isLoadingFamilyAppointments = false
+    
     var body: some View {
         ZStack {
             mainContent
             overlaysContent
+        }
+        .onAppear {
+            loadFamilyMembers()
+            fetchFamilyAppointments()
         }
     }
     
@@ -53,7 +75,6 @@ struct FamilyView: View {
             VStack(spacing: 20) {
                 familyMembersSection
                 pastAppointmentsSection
-                labReportsSection
                 Spacer(minLength: 100)
             }
             .padding(.top, 10)
@@ -72,12 +93,6 @@ struct FamilyView: View {
             Text("Family Members")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.black)
-            Spacer()
-            Button(action: {}) {
-                Text("Manage")
-                    .font(.system(size: 14))
-                    .foregroundColor(.blue)
-            }
         }
         .padding(.horizontal, 20)
     }
@@ -85,7 +100,7 @@ struct FamilyView: View {
     private var familyMembersScrollView: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 16) {
-                ForEach(FamilyMember.sampleData, id: \.id) { member in
+                ForEach(familyMembers, id: \.id) { member in
                     Button(action: {
                         selectedMember = member
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -100,6 +115,19 @@ struct FamilyView: View {
                 addFamilyMemberButton
             }
             .padding(.horizontal, 20)
+        }
+    }
+    
+    private func loadFamilyMembers() {
+        if let dependentsData = UserDefaults.standard.data(forKey: "dependents"),
+           let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData) {
+            // Optionally assign different colors for each member
+            let colors: [Color] = [.orange.opacity(0.7), .brown.opacity(0.7), .pink.opacity(0.7), .blue.opacity(0.7), .green.opacity(0.7)]
+            familyMembers = dependents.enumerated().map { index, dep in
+                FamilyMember(dependent: dep, color: colors[index % colors.count])
+            }
+        } else {
+            familyMembers = []
         }
     }
     
@@ -141,7 +169,7 @@ struct FamilyView: View {
             VStack(spacing: 12) {
                 Circle()
                     .fill(Color.blue.opacity(0.1))
-                    .frame(width: 80, height: 80)
+                    .frame(width: 60, height: 60)
                     .overlay(
                         Image(systemName: "plus")
                             .font(.system(size: 24, weight: .medium))
@@ -150,13 +178,12 @@ struct FamilyView: View {
                     .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                 
                 Text("Add Member")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(.blue)
                     .multilineTextAlignment(.center)
             }
             .frame(width: 100)
             .padding(.vertical, 12)
-            .background(Color.white)
             .cornerRadius(12)
             .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
@@ -187,10 +214,14 @@ struct FamilyView: View {
     
     private var pastAppointmentsList: some View {
         VStack(spacing: 12) {
-            if PastAppointment.sampleData.isEmpty {
+            if isLoadingFamilyAppointments {
+                ProgressView("Loading appointments...")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+            } else if familyAppointments.isEmpty {
                 emptyAppointmentsView
             } else {
-                ForEach(PastAppointment.sampleData.prefix(3), id: \.id) { appointment in
+                ForEach(familyAppointments.prefix(3), id: \.id) { appointment in
                     Button(action: {
                         selectedAppointment = appointment
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -204,6 +235,58 @@ struct FamilyView: View {
             }
         }
         .padding(.horizontal, 20)
+    }
+    
+    private func fetchFamilyAppointments() {
+        isLoadingFamilyAppointments = true
+        familyAppointments = []
+        
+        guard let dependentsData = UserDefaults.standard.data(forKey: "dependents"),
+              let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData) else {
+            isLoadingFamilyAppointments = false
+            return
+        }
+        
+        let group = DispatchGroup()
+        var allAppointments: [PastAppointment] = []
+        
+        for dependent in dependents {
+            group.enter()
+            let urlString = "https://mediaccess.vercel.app/api/appointment/all?patientId=\(dependent.id)"
+            guard let url = URL(string: urlString) else {
+                group.leave()
+                continue
+            }
+            
+            URLSession.shared.dataTask(with: url) { data, response, error in
+                defer { group.leave() }
+                if let data = data {
+                    do {
+                        struct AppointmentDetail: Codable, Identifiable {
+                            let id: String
+                            let title: String
+                            let doctor: String
+                            let date: String
+                        }
+                        struct AppointmentsResponse: Codable {
+                            let appointments: [AppointmentDetail]
+                        }
+                        let response = try JSONDecoder().decode(AppointmentsResponse.self, from: data)
+                        let mapped = response.appointments.map {
+                            PastAppointment(title: $0.title, doctor: $0.doctor, date: $0.date)
+                        }
+                        allAppointments.append(contentsOf: mapped)
+                    } catch {
+                        // Ignore errors for individual dependents
+                    }
+                }
+            }.resume()
+        }
+        
+        group.notify(queue: .main) {
+            self.familyAppointments = allAppointments
+            self.isLoadingFamilyAppointments = false
+        }
     }
     
     private func pastAppointmentCard(_ appointment: PastAppointment) -> some View {
@@ -274,120 +357,9 @@ struct FamilyView: View {
         .cornerRadius(12)
     }
     
-    private var labReportsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            labReportsHeader
-            labReportsList
-        }
-    }
-    
-    private var labReportsHeader: some View {
-        HStack {
-            Text("Lab Reports")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.black)
-            Spacer()
-            Button(action: {}) {
-                Text("View all")
-                    .font(.system(size: 14))
-                    .foregroundColor(.green)
-            }
-        }
-        .padding(.horizontal, 20)
-    }
-    
-    private var labReportsList: some View {
-        VStack(spacing: 12) {
-            if LabReport.sampleData.isEmpty {
-                emptyLabReportsView
-            } else {
-                ForEach(LabReport.sampleData.prefix(3), id: \.id) { report in
-                    Button(action: {
-                        selectedLabReport = report
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showLabReportDetails = true
-                        }
-                    }) {
-                        labReportCard(report)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-    }
-    
-    private func labReportCard(_ report: LabReport) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.green.opacity(0.1))
-                    .frame(width: 40, height: 40)
-                
-                Image(systemName: "doc.text")
-                    .font(.system(size: 18))
-                    .foregroundColor(.green)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(report.title)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.black)
-                
-                Text(report.type)
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-                
-                Text(report.date)
-                    .font(.system(size: 12))
-                    .foregroundColor(.green)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.green.opacity(0.1))
-                    .cornerRadius(6)
-            }
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14))
-                .foregroundColor(.gray)
-        }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
-    }
-    
-    private var emptyLabReportsView: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color.gray.opacity(0.1))
-                    .frame(width: 60, height: 60)
-                
-                Image(systemName: "doc.text")
-                    .font(.system(size: 24))
-                    .foregroundColor(.gray)
-            }
-            
-            Text("No lab reports available")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.gray)
-            
-            Text("Lab results will be shown here")
-                .font(.system(size: 14))
-                .foregroundColor(.gray.opacity(0.7))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
-        .background(Color.white)
-        .cornerRadius(12)
-    }
     
     private var overlaysContent: some View {
         ZStack {
-            // Member Details Overlay
             if showMemberDetails, let member = selectedMember {
                 FamilyMemberDetailsView(
                     member: member,
@@ -441,19 +413,18 @@ struct FamilyView: View {
     }
 }
 
-// MARK: - Data Models
-struct FamilyMember: Identifiable {
-    let id = UUID()
-    let name: String
-    let relationship: String
-    let avatarColor: Color
-    
-    static let sampleData = [
-        FamilyMember(name: "Sophia Carter", relationship: "Wife, 32", avatarColor: Color.orange.opacity(0.7)),
-        FamilyMember(name: "Ethan Carter", relationship: "Son, 5", avatarColor: Color.brown.opacity(0.7)),
-        FamilyMember(name: "Olivia Carter", relationship: "Daughter, 8", avatarColor: Color.pink.opacity(0.7))
-    ]
-}
+// struct FamilyMember: Identifiable {
+//     let id = UUID()
+//     let name: String
+//     let relationship: String
+//     let avatarColor: Color
+
+//     static let sampleData = [
+//         FamilyMember(name: "Sophia Carter", relationship: "Wife", avatarColor: Color.orange.opacity(0.7)),
+//         FamilyMember(name: "Ethan Carter", relationship: "Son", avatarColor: Color.brown.opacity(0.7)),
+//         FamilyMember(name: "Olivia Carter", relationship: "Daughter", avatarColor: Color.pink.opacity(0.7))
+//     ]
+// }
 
 struct PastAppointment: Identifiable {
     let id = UUID()

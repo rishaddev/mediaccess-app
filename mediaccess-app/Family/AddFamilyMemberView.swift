@@ -5,10 +5,8 @@ struct AddFamilyMemberView: View {
     @State private var name = ""
     @State private var relationship = ""
     @State private var selectedDate = ""
-    @State private var dateOfBirth = Date()
     @State private var gender = "Male"
     @State private var contactNumber = ""
-    @State private var showingDatePicker = false
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var isAdding = false
@@ -61,9 +59,6 @@ struct AddFamilyMemberView: View {
             addMemberButton
         }
         .background(Color(.systemGroupedBackground))
-        .sheet(isPresented: $showingDatePicker) {
-            datePickerSheet
-        }
         .alert("Add Family Member", isPresented: $showAlert) {
             Button("OK") {
                 if alertMessage.contains("successfully") {
@@ -76,7 +71,6 @@ struct AddFamilyMemberView: View {
         }
     }
     
-    // MARK: - Header View
     private var headerView: some View {
         HStack {
             Button(action: onBackTapped) {
@@ -100,7 +94,6 @@ struct AddFamilyMemberView: View {
             
             Spacer()
             
-            // Invisible button for balance
             Circle()
                 .fill(Color.clear)
                 .frame(width: 40, height: 40)
@@ -111,7 +104,6 @@ struct AddFamilyMemberView: View {
         .background(Color(.systemGroupedBackground))
     }
     
-    // MARK: - Primary User Section
     private var primaryUserSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Primary Account Holder")
@@ -174,7 +166,6 @@ struct AddFamilyMemberView: View {
         }
     }
     
-    // MARK: - Family Member Details Section
     private var familyMemberDetailsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
@@ -231,36 +222,7 @@ struct AddFamilyMemberView: View {
             .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
     }
-    
-    private var datePickerSheet: some View {
-        NavigationView {
-            VStack {
-                DatePicker(
-                    "Select Date",
-                    selection: $dateOfBirth,
-                    in: ...Date(), // Allow any date up to today
-                    displayedComponents: .date
-                )
-                .datePickerStyle(WheelDatePickerStyle())
-                .padding()
-                
-                Spacer()
-            }
-            .navigationTitle("Select Date")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "yyyy-MM-dd"
-                        selectedDate = formatter.string(from: dateOfBirth)
-                        showingDatePicker = false
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
+
     
     private func memberInfoField(
         title: String,
@@ -386,18 +348,15 @@ struct AddFamilyMemberView: View {
         .padding(.bottom, 30)
     }
     
-    // MARK: - Helper Functions
-    
     private func resetForm() {
         name = ""
         relationship = ""
-        dateOfBirth = Date()
+        selectedDate = ""
         gender = "Male"
         contactNumber = ""
     }
     
     private func addFamilyMember() {
-        // Validate required fields
         let dependentName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let memberRelationship = relationship.trimmingCharacters(in: .whitespacesAndNewlines)
         
@@ -413,27 +372,18 @@ struct AddFamilyMemberView: View {
             return
         }
         
-        // Calculate age from date of birth
-        let calendar = Calendar.current
-        let age = calendar.dateComponents([.year], from: dateOfBirth, to: Date()).year ?? 0
-        
         isAdding = true
         
-        // Simulate API call - replace with actual API integration
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             isAdding = false
             
             let formatter = DateFormatter()
             formatter.dateStyle = .medium
             
-            // Success simulation
-            alertMessage = "🎉 Dependent successfully added!\n\nGuardian: \(primaryUserName)\nDependent: \(dependentName)\nRelationship: \(memberRelationship)\nAge: \(age) years old\nDate of Birth: \(formatter.string(from: dateOfBirth))\nGender: \(gender)\n\nThey can now be selected when booking appointments."
+            alertMessage = "🎉 Dependent successfully added!\n\nGuardian: \(primaryUserName)\nDependent: \(dependentName)\nRelationship: \(memberRelationship)\nDate of Birth: \(selectedDate)\nGender: \(gender)\n"
             showAlert = true
         }
         
-        // TODO: Implement actual API integration here
-        // Example:
-        /*
          guard let url = URL(string: "https://mediaccess.vercel.app/api/dependent/add") else {
          alertMessage = "Invalid API endpoint"
          showAlert = true
@@ -446,11 +396,9 @@ struct AddFamilyMemberView: View {
          
          let dependent = [
          "guardianId": primaryUserId,
-         "guardianName": primaryUserName,
          "name": dependentName,
          "relationship": memberRelationship,
-         "dateOfBirth": formatter.string(from: dateOfBirth),
-         "age": age,
+         "dateOfBirth": selectedDate,
          "gender": gender,
          "contactNumber": contactNumber
          ]
@@ -490,7 +438,6 @@ struct AddFamilyMemberView: View {
          alertMessage = "Failed to prepare dependent data: \(error.localizedDescription)"
          showAlert = true
          }
-         */
     }
 }
 
