@@ -16,7 +16,6 @@ struct FamilyMemberDetailsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Button(action: onBackTapped) {
                     ZStack {
@@ -47,9 +46,7 @@ struct FamilyMemberDetailsView: View {
             
             ScrollView {
                 VStack(spacing: 24) {
-                    // Profile Section - Enhanced to match pharmacy theme
                     ZStack {
-                        // Background gradient similar to pharmacy hero
                         LinearGradient(
                             gradient: Gradient(colors: [Color.blue.opacity(0.7), Color.blue.opacity(0.9)]),
                             startPoint: .topLeading,
@@ -59,7 +56,6 @@ struct FamilyMemberDetailsView: View {
                         .cornerRadius(12)
                         
                         VStack(spacing: 16) {
-                            // Profile picture
                             Circle()
                                 .fill(Color.white.opacity(0.2))
                                 .frame(width: 100, height: 100)
@@ -87,7 +83,6 @@ struct FamilyMemberDetailsView: View {
                     }
                     .padding(.horizontal, 20)
                     
-                    // Tab Navigation - Fixed to prevent text wrapping
                     VStack(spacing: 0) {
                         HStack(spacing: 0) {
                             TabButton(title: "Overview", isSelected: selectedTab == 0) {
@@ -104,7 +99,6 @@ struct FamilyMemberDetailsView: View {
                             }
                         }
                         
-                        // Tab indicator line
                         HStack(spacing: 0) {
                             Rectangle()
                                 .fill(selectedTab == 0 ? Color.blue : Color.clear)
@@ -170,7 +164,6 @@ struct FamilyMemberDetailsView: View {
             return
         }
         
-        // Check cache first
         if let cached = Self.memberDataCache[member.id] {
             appointments = cached.appointments
             homeVisits = cached.homeVisits
@@ -185,7 +178,6 @@ struct FamilyMemberDetailsView: View {
         var fetchedHomeVisits: [MemberHomeVisit] = []
         var fetchedPharmacyOrders: [MemberPharmacyOrder] = []
         
-        // Fetch Appointments
         group.enter()
         let appointmentsURLString = "https://mediaccess.vercel.app/api/appointment/all?patientId=\(member.id)"
         guard let appointmentsURL = URL(string: appointmentsURLString) else {
@@ -210,16 +202,13 @@ struct FamilyMemberDetailsView: View {
                 return
             }
             
-            // Debug: Print raw response
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("Appointments Response: \(jsonString)")
             }
             
             do {
-                // Try different possible response structures
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     if let appointmentsArray = json["appointments"] as? [[String: Any]] {
-                        // Structure: { "appointments": [...] }
                         fetchedAppointments = appointmentsArray.compactMap { appointmentDict in
                             guard let id = appointmentDict["id"] as? String,
                                   let title = appointmentDict["title"] as? String,
@@ -230,7 +219,6 @@ struct FamilyMemberDetailsView: View {
                             return MemberAppointment(id: UUID(), title: title, doctor: doctor, date: date)
                         }
                     } else if json["appointments"] is NSNull || json["appointments"] == nil {
-                        // Empty appointments array
                         fetchedAppointments = []
                     }
                 }
@@ -239,7 +227,6 @@ struct FamilyMemberDetailsView: View {
             }
         }.resume()
         
-        // Fetch Home Visits
         group.enter()
         let homeVisitsURLString = "https://mediaccess.vercel.app/api/home-visit/all?patientId=\(member.id)"
         guard let homeVisitsURL = URL(string: homeVisitsURLString) else {
@@ -260,7 +247,6 @@ struct FamilyMemberDetailsView: View {
                 return
             }
             
-            // Debug: Print raw response
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("Home Visits Response: \(jsonString)")
             }
@@ -284,7 +270,6 @@ struct FamilyMemberDetailsView: View {
             }
         }.resume()
         
-        // Fetch Pharmacy Orders
         group.enter()
         let pharmacyOrdersURLString = "https://mediaccess.vercel.app/api/pharmacy-order/all?patientId=\(member.id)"
         guard let pharmacyOrdersURL = URL(string: pharmacyOrdersURLString) else {
@@ -305,7 +290,6 @@ struct FamilyMemberDetailsView: View {
                 return
             }
             
-            // Debug: Print raw response
             if let jsonString = String(data: data, encoding: .utf8) {
                 print("Pharmacy Orders Response: \(jsonString)")
             }
@@ -329,13 +313,11 @@ struct FamilyMemberDetailsView: View {
             }
         }.resume()
         
-        // Update UI when all requests complete
         group.notify(queue: .main) {
             self.appointments = fetchedAppointments
             self.homeVisits = fetchedHomeVisits
             self.pharmacyOrders = fetchedPharmacyOrders
             
-            // Cache the results
             Self.memberDataCache[self.member.id] = (fetchedAppointments, fetchedHomeVisits, fetchedPharmacyOrders)
             
             self.isLoadingData = false
@@ -357,14 +339,13 @@ struct TabButton: View {
                 .foregroundColor(isSelected ? .blue : .gray)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .minimumScaleFactor(0.8) // Prevent text wrapping
+                .minimumScaleFactor(0.8)
                 .lineLimit(1)
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
 
-// MARK: - Tab Content Views
 
 struct OverviewTabContent: View {
     let appointments: [MemberAppointment]
@@ -374,10 +355,19 @@ struct OverviewTabContent: View {
     
     var body: some View {
         VStack(spacing: 24) {
-            // Recent Appointments
             SectionCard(title: "Recent Appointments") {
                 if isLoading {
-                    ProgressView("Loading appointments...")
+                    VStack(spacing: 16) {
+                        ProgressView()
+                        Text("Loading appointments...")
+                            .font(.body)
+                            .foregroundColor(.gray)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
                 } else if appointments.isEmpty {
                     EmptyStateView(
                         icon: "calendar",
@@ -399,11 +389,20 @@ struct OverviewTabContent: View {
                 }
             }
             
-            // Recent Home Visits
             if !homeVisits.isEmpty || isLoading {
                 SectionCard(title: "Recent Home Visits") {
                     if isLoading {
-                        ProgressView("Loading home visits...")
+                        VStack(spacing: 16) {
+                            ProgressView()
+                            Text("Loading home visits...")
+                                .font(.body)
+                                .foregroundColor(.gray)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                        .background(Color.white)
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
                     } else {
                         VStack(spacing: 12) {
                             ForEach(homeVisits.prefix(2), id: \.id) { visit in
@@ -420,7 +419,6 @@ struct OverviewTabContent: View {
                 }
             }
             
-            // Quick Stats
             HStack(spacing: 12) {
                 StatCard(
                     title: "Total Visits",
@@ -451,6 +449,9 @@ struct AppointmentsTabContent: View {
                 ProgressView("Loading appointments...")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
             } else if appointments.isEmpty {
                 EmptyStateView(
                     icon: "calendar",
@@ -540,7 +541,6 @@ struct PharmacyTabContent: View {
     }
 }
 
-// MARK: - Reusable Components
 
 struct SectionCard<Content: View>: View {
     let title: String
@@ -573,7 +573,6 @@ struct AppointmentRow: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Icon with status-based styling
             RoundedRectangle(cornerRadius: 10)
                 .fill(isUpcoming ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
                 .frame(width: 44, height: 44)

@@ -128,7 +128,6 @@ struct ContentView: View {
                             }
                         }
 
-                        // Show navigation bar only in main dashboard view
                         if case .main = dashboardPage {
                             NavigationBar(selectedTab: $selectedTab)
                         }
@@ -143,7 +142,6 @@ struct ContentView: View {
     }
     
     private func handleLogout() {
-        // Clear session data but keep user profile data
         UserDefaults.standard.set(false, forKey: "isLoggedIn")
         
         withAnimation(.easeInOut(duration: 0.3)) {
@@ -154,13 +152,9 @@ struct ContentView: View {
     }
     
     private func checkLoginState() {
-        // Check if user has previously registered/logged in (has saved profile data)
-        // but always require fresh authentication
         if UserDefaults.standard.string(forKey: "userEmail") != nil {
-            // User has account data saved, go directly to login screen
             currentState = .login
         } else {
-            // New user, show welcome screen
             currentState = .welcome
         }
     }

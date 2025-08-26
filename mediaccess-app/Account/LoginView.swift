@@ -42,138 +42,296 @@ struct LoginView: View {
     @State private var alertMessage = ""
     @State private var alertTitle = "Login"
     @State private var isFaceIDLoading = false
+    @State private var showPassword = false
     
     @State private var unlocked = false
     @State private var text = "LOCKED"
+    
+    @State private var animateContent = false
+    @State private var animateFields = false
+    @State private var animateButtons = false
     
     let onBackTapped: () -> Void
     let onLoginSuccess: () -> Void
     let onSignUpTapped: () -> Void
     
     var body: some View {
-        VStack(spacing: 24) {
-            HStack {
-                Button(action: {
-                    onBackTapped()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.title2)
-                        .foregroundColor(.black)
-                }
+        GeometryReader { geometry in
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.95, green: 0.98, blue: 1.0),
+                        Color(red: 0.9, green: 0.95, blue: 1.0),
+                        Color.white
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
                 
-                Spacer()
+                FloatingMedicalElements()
                 
-                Text("Log In")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.black)
-                
-                Spacer()
-                
-                Button(action: {}) {
-                    Image(systemName: "arrow.left")
-                        .font(.title2)
-                        .opacity(0)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            
-            VStack(spacing: 20) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Email")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.black)
-                    
-                    TextField("Enter your email", text: $email)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 16)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                        .font(.system(size: 16))
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                }
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Password")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.black)
-                    
-                    SecureField("Enter your password", text: $password)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 16)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(12)
-                        .font(.system(size: 16))
-                }
-            }
-            .padding(.horizontal, 20)
-            
-            Spacer()
-            
-            VStack(spacing: 16) {
-                Button(action: {
-                    loginUser()
-                }) {
+                VStack(spacing: 0) {
                     HStack {
-                        if isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.8)
+                        Button(action: {
+                            onBackTapped()
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 44, height: 44)
+                                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                
+                                Image(systemName: "arrow.left")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                            }
                         }
-                        Text(isLoading ? "Logging In..." : "Log In")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 4) {
+                            Text("Welcome Back")
+                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.1, green: 0.4, blue: 0.8), Color(red: 0.2, green: 0.6, blue: 0.9)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                            
+                            Text("Sign in to your account")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Spacer()
+                        
+                        Circle()
+                            .fill(Color.clear)
+                            .frame(width: 44, height: 44)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(isLoading ? Color.blue.opacity(0.7) : Color.blue)
-                    .cornerRadius(12)
-                }
-                .disabled(isLoading)
-                
-                Button(action: {
-                    handleBiometricAuth()
-                }) {
-                    HStack {
-                        if isFaceIDLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "faceid")
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                    .opacity(animateContent ? 1.0 : 0.0)
+                    .offset(y: animateContent ? 0 : -20)
+                    
+                    Spacer(minLength: 40)
+                    
+                    VStack(spacing: 24) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Email Address")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.8))
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "envelope.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                                    .frame(width: 24)
+                                
+                                TextField("Enter your email", text: $email)
+                                    .font(.system(size: 16))
+                                    .keyboardType(.emailAddress)
+                                    .autocapitalization(.none)
+                                    .foregroundColor(.black)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 18)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(
+                                        email.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
+                                        lineWidth: 1.5
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                        }
+                        .opacity(animateFields ? 1.0 : 0.0)
+                        .offset(x: animateFields ? 0 : -50)
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Password")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.black.opacity(0.8))
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                                    .frame(width: 24)
+                                
+                                Group {
+                                    if showPassword {
+                                        TextField("Enter your password", text: $password)
+                                            .autocapitalization(.none)
+                                            .textInputAutocapitalization(.never)
+                                            .disableAutocorrection(true)
+                                    } else {
+                                        SecureField("Password", text: $password)
+                                            .autocapitalization(.none)
+                                            .textInputAutocapitalization(.never)
+                                            .disableAutocorrection(true)
+                                    }
+                                }
                                 .font(.system(size: 16))
+                                .foregroundColor(.black)
+                                
+                                Button(action: {
+                                    showPassword.toggle()
+                                }) {
+                                    Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 18)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(
+                                        password.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
+                                        lineWidth: 1.5
+                                    )
+                            )
+                            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
                         }
-                        Text(isFaceIDLoading ? "Authenticating..." : "Face ID")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
+                        .opacity(animateFields ? 1.0 : 0.0)
+                        .offset(x: animateFields ? 0 : -50)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(isFaceIDLoading ? Color.green.opacity(0.7) : Color.green)
-                    .cornerRadius(12)
+                    .padding(.horizontal, 24)
+                    
+                    Spacer(minLength: 40)
+                    
+                    VStack(spacing: 16) {
+                        Button(action: {
+                            loginUser()
+                        }) {
+                            HStack(spacing: 12) {
+                                if isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.9)
+                                } else {
+                                    Image(systemName: "arrow.right")
+                                        .font(.system(size: 16, weight: .semibold))
+                                }
+                                
+                                Text(isLoading ? "Signing In..." : "Sign In")
+                                    .font(.system(size: 18, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(
+                                LinearGradient(
+                                    colors: isLoading ?
+                                    [Color.blue.opacity(0.7), Color.blue.opacity(0.5)] :
+                                        [Color(red: 0.1, green: 0.4, blue: 0.8), Color(red: 0.2, green: 0.6, blue: 0.9)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(16)
+                            .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                        .disabled(isLoading)
+                        .scaleEffect(animateButtons ? 1.0 : 0.9)
+                        .opacity(animateButtons ? 1.0 : 0.0)
+                        
+                        HStack {
+                            VStack { Divider().background(Color.gray.opacity(0.3)) }
+                            Text("OR")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 16)
+                            VStack { Divider().background(Color.gray.opacity(0.3)) }
+                        }
+                        .padding(.vertical, 8)
+                        .opacity(animateButtons ? 1.0 : 0.0)
+                        
+                        Button(action: {
+                            handleBiometricAuth()
+                        }) {
+                            HStack(spacing: 12) {
+                                if isFaceIDLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.9)
+                                } else {
+                                    Image(systemName: "faceid")
+                                        .font(.system(size: 20, weight: .medium))
+                                }
+                                
+                                Text(isFaceIDLoading ? "Authenticating..." : "Continue with Face ID")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(
+                                LinearGradient(
+                                    colors: isFaceIDLoading ?
+                                    [Color.green.opacity(0.7), Color.green.opacity(0.5)] :
+                                        [Color(red: 0.2, green: 0.7, blue: 0.4), Color(red: 0.1, green: 0.6, blue: 0.3)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(16)
+                            .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+                        .disabled(isFaceIDLoading)
+                        .scaleEffect(animateButtons ? 1.0 : 0.9)
+                        .opacity(animateButtons ? 1.0 : 0.0)
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    Spacer(minLength: 20)
+                    
+                    VStack(spacing: 12) {
+                        Text("Don't have an account?")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                        
+                        Button(action: {
+                            onSignUpTapped()
+                        }) {
+                            Text("Create Account")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.1, green: 0.4, blue: 0.8), Color(red: 0.2, green: 0.6, blue: 0.9)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        }
+                    }
+                    .padding(.bottom, max(geometry.safeAreaInsets.bottom + 20, 40))
+                    .opacity(animateButtons ? 1.0 : 0.0)
+                    .offset(y: animateButtons ? 0 : 20)
                 }
-                .disabled(isFaceIDLoading)
-
             }
-            .padding(.horizontal, 20)
-            
-            VStack(spacing: 8) {
-                Text("No account?")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-                
-                Button(action: {
-                    onSignUpTapped()
-                }) {
-                    Text("Sign Up")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.black)
-                }
-            }
-            .padding(.bottom, 40)
         }
-        .background(Color.white)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6)) {
+                animateContent = true
+            }
+            
+            withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
+                animateFields = true
+            }
+            
+            withAnimation(.easeOut(duration: 0.6).delay(0.4)) {
+                animateButtons = true
+            }
+        }
         .alert(alertTitle, isPresented: $showAlert) {
             Button("OK") { }
         } message: {
@@ -282,13 +440,12 @@ struct LoginView: View {
         if let patientData = try? JSONEncoder().encode(patient) {
             UserDefaults.standard.set(patientData, forKey: "patientData")
         }
-
+        
         if let dependents = patient.dependent,
-       let dependentsData = try? JSONEncoder().encode(dependents) {
-        UserDefaults.standard.set(dependentsData, forKey: "dependents")
+           let dependentsData = try? JSONEncoder().encode(dependents) {
+            UserDefaults.standard.set(dependentsData, forKey: "dependents")
+        }
     }
-    }
-    
     
     private func handleBiometricAuth() {
         guard biometricAuthenticationAvailable() else {
@@ -340,14 +497,7 @@ struct LoginView: View {
         
         let canEvaluate = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
         
-        print("Can evaluate biometrics: \(canEvaluate)")
-        if let error = error {
-            print("Biometric evaluation error: \(error.localizedDescription)")
-        }
-        print("Biometry type: \(context.biometryType.rawValue)")
-        
         guard canEvaluate else {
-            print("Cannot evaluate biometric policy")
             if let error = error {
                 completion(.failure(error))
             } else {
@@ -358,18 +508,7 @@ struct LoginView: View {
         
         let reason = "Use Face ID to log into your account"
         
-        print("Starting biometric evaluation...")
-        
         context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
-            print("Biometric evaluation completed - Success: \(success)")
-            
-            if let authError = authenticationError {
-                print("Authentication error: \(authError.localizedDescription)")
-                if let laError = authError as? LAError {
-                    print("LAError code: \(laError.code.rawValue)")
-                }
-            }
-            
             if success {
                 completion(.success(true))
             } else {
@@ -425,6 +564,49 @@ struct LoginView: View {
         alertTitle = title
         alertMessage = message
         showAlert = true
+    }
+}
+
+struct FloatingMedicalElements: View {
+    @State private var animate = false
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<8, id: \.self) { index in
+                FloatingMedicalIcon(
+                    icon: ["heart.fill", "cross.case.fill", "pills.fill", "drop.fill", "bandage.fill", "stethoscope", "cross.fill", "leaf.fill"][index],
+                    delay: Double(index) * 0.3
+                )
+            }
+        }
+    }
+}
+
+struct FloatingMedicalIcon: View {
+    let icon: String
+    let delay: Double
+    @State private var animate = false
+    
+    var body: some View {
+        Image(systemName: icon)
+            .font(.system(size: CGFloat.random(in: 16...24), weight: .light))
+            .foregroundColor(Color.blue.opacity(0.08))
+            .offset(
+                x: animate ? CGFloat.random(in: -150...150) : CGFloat.random(in: -50...50),
+                y: animate ? CGFloat.random(in: -300...300) : CGFloat.random(in: -100...100)
+            )
+            .scaleEffect(animate ? CGFloat.random(in: 0.3...1.2) : 0.5)
+            .rotationEffect(.degrees(animate ? Double.random(in: 0...360) : 0))
+            .opacity(animate ? Double.random(in: 0.03...0.1) : 0.05)
+            .animation(
+                .easeInOut(duration: Double.random(in: 12...20))
+                .repeatForever(autoreverses: true)
+                .delay(delay),
+                value: animate
+            )
+            .onAppear {
+                animate = true
+            }
     }
 }
 

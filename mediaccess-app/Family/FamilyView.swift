@@ -377,7 +377,6 @@ struct FamilyView: View {
     
     private func modernPastAppointmentCard(_ appointment: PastAppointment) -> some View {
         HStack(spacing: 16) {
-            // Icon section with gradient
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(
@@ -394,7 +393,6 @@ struct FamilyView: View {
                     .foregroundColor(.blue)
             }
             
-            // Content section
             VStack(alignment: .leading, spacing: 6) {
                 Text(appointment.title)
                     .font(.system(size: 17, weight: .semibold))

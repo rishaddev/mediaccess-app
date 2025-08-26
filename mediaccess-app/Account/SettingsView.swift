@@ -12,7 +12,7 @@ struct SettingsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            
             HStack {
                 Button(action: {
                     dismiss()
@@ -244,7 +244,7 @@ struct SettingsRow: View {
                         .foregroundColor(.black)
                 }
                 
-                // Content
+                
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 16, weight: .medium))

@@ -93,7 +93,6 @@ struct PrivacySettingsView: View {
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(8)
                             
-                            // Confirm New Password Field
                             HStack {
                                 if showConfirmPassword {
                                     TextField("Confirm New Password", text: $confirmPassword)
@@ -120,7 +119,6 @@ struct PrivacySettingsView: View {
                         }
                         .padding(.horizontal, 20)
                         
-                        // Password Requirements
                         Text("Password must be at least 8 characters long and include a mix of letters, numbers, and symbols.")
                             .font(.system(size: 14))
                             .foregroundColor(.gray)
@@ -132,10 +130,8 @@ struct PrivacySettingsView: View {
                 }
             }
             
-            // Update Password Button
             VStack {
                 Button(action: {
-                    // TODO: Implement password update functionality
                     updatePassword()
                 }) {
                     Text("Update Password")
@@ -154,30 +150,22 @@ struct PrivacySettingsView: View {
     }
     
     private func updatePassword() {
-        // TODO: Add validation logic
         guard !currentPassword.isEmpty,
               !newPassword.isEmpty,
               !confirmPassword.isEmpty else {
-            // Show error: All fields are required
             return
         }
         
         guard newPassword == confirmPassword else {
-            // Show error: Passwords don't match
             return
         }
         
         guard isValidPassword(newPassword) else {
-            // Show error: Password doesn't meet requirements
             return
         }
-        
-        // TODO: API call to update password
-        // updatePasswordAPI(current: currentPassword, new: newPassword)
     }
     
     private func isValidPassword(_ password: String) -> Bool {
-        // Password validation: at least 8 characters, mix of letters, numbers, and symbols
         let passwordRegex = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$"
         let passwordPredicate = NSPredicate(format: "SELF MATCHES %@", passwordRegex)
         return passwordPredicate.evaluate(with: password)
