@@ -22,7 +22,6 @@ struct SignUpView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Gradient Background
                 LinearGradient(
                     colors: [
                         Color(red: 0.95, green: 0.98, blue: 1.0),
@@ -34,10 +33,9 @@ struct SignUpView: View {
                 )
                 .ignoresSafeArea()
                 
-                // Floating Background Elements
                 FloatingRegistrationElements()
                 
-                ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
                     VStack(spacing: 0) {
                         
                         HStack {
@@ -83,268 +81,276 @@ struct SignUpView: View {
                         }
                         .padding(.horizontal, 24)
                         .padding(.top, 20)
+                        .padding(.bottom, 10)
                         .opacity(animateContent ? 1.0 : 0.0)
                         .offset(y: animateContent ? 0 : -20)
                         
-                        // Welcome Message
-                        VStack(spacing: 8) {
-                            Text("Welcome to better healthcare")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(.black.opacity(0.7))
+                        ScrollView(.vertical, showsIndicators: false) {
                             
-                            Text("Fill in your details to get started")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.top, 20)
-                        .padding(.bottom, 32)
-                        .opacity(animateContent ? 1.0 : 0.0)
-                        .offset(y: animateContent ? 0 : -10)
-                        
-                        // Form Fields
-                        VStack(spacing: 20) {
-                            // Full Name Field
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Full Name")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.black.opacity(0.8))
+                            
+                            // Welcome Message
+                            VStack(spacing: 8) {
+                                Text("Welcome to better healthcare")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(.black.opacity(0.7))
                                 
-                                HStack(spacing: 12) {
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
-                                        .frame(width: 24)
+                                Text("Fill in your details to get started")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.top, 20)
+                            .padding(.bottom, 32)
+                            .opacity(animateContent ? 1.0 : 0.0)
+                            .offset(y: animateContent ? 0 : -10)
+                            
+                            // Form Fields
+                            VStack(spacing: 20) {
+                                // Full Name Field
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Full Name")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.black.opacity(0.8))
                                     
-                                    TextField("Enter your full name", text: $fullName)
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "person.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                                            .frame(width: 24)
+                                        
+                                        TextField("Enter your full name", text: $fullName)
+                                            .font(.system(size: 16))
+                                            .foregroundColor(.black)
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 18)
+                                    .background(Color.white)
+                                    .cornerRadius(16)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                fullName.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                                    .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                                }
+                                .opacity(animateFields ? 1.0 : 0.0)
+                                .offset(x: animateFields ? 0 : -50)
+                                
+                                // Email Field
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Email Address")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.black.opacity(0.8))
+                                    
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "envelope.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                                            .frame(width: 24)
+                                        
+                                        TextField("Enter your email", text: $email)
+                                            .font(.system(size: 16))
+                                            .keyboardType(.emailAddress)
+                                            .autocapitalization(.none)
+                                            .foregroundColor(.black)
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 18)
+                                    .background(Color.white)
+                                    .cornerRadius(16)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                email.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                                    .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                                }
+                                .opacity(animateFields ? 1.0 : 0.0)
+                                .offset(x: animateFields ? 0 : -50)
+                                
+                                // Password Field
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Password")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.black.opacity(0.8))
+                                    
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                                            .frame(width: 24)
+                                        
+                                        Group {
+                                            if showPassword {
+                                                TextField("Enter your password", text: $password)
+                                            } else {
+                                                SecureField("Enter your password", text: $password)
+                                            }
+                                        }
                                         .font(.system(size: 16))
                                         .foregroundColor(.black)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 18)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            fullName.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
-                                            lineWidth: 1.5
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-                            }
-                            .opacity(animateFields ? 1.0 : 0.0)
-                            .offset(x: animateFields ? 0 : -50)
-                            
-                            // Email Field
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Email Address")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.black.opacity(0.8))
-                                
-                                HStack(spacing: 12) {
-                                    Image(systemName: "envelope.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
-                                        .frame(width: 24)
-                                    
-                                    TextField("Enter your email", text: $email)
-                                        .font(.system(size: 16))
-                                        .keyboardType(.emailAddress)
-                                        .autocapitalization(.none)
-                                        .foregroundColor(.black)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 18)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            email.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
-                                            lineWidth: 1.5
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-                            }
-                            .opacity(animateFields ? 1.0 : 0.0)
-                            .offset(x: animateFields ? 0 : -50)
-                            
-                            // Password Field
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Password")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.black.opacity(0.8))
-                                
-                                HStack(spacing: 12) {
-                                    Image(systemName: "lock.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
-                                        .frame(width: 24)
-                                    
-                                    Group {
-                                        if showPassword {
-                                            TextField("Enter your password", text: $password)
-                                        } else {
-                                            SecureField("Enter your password", text: $password)
+                                        
+                                        Button(action: {
+                                            showPassword.toggle()
+                                        }) {
+                                            Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                                                .font(.system(size: 16))
+                                                .foregroundColor(.gray)
                                         }
                                     }
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.black)
-                                    
-                                    Button(action: {
-                                        showPassword.toggle()
-                                    }) {
-                                        Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                                            .font(.system(size: 16))
-                                            .foregroundColor(.gray)
-                                    }
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 18)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            password.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
-                                            lineWidth: 1.5
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-                                
-                                // Password requirements
-                                if !password.isEmpty {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: password.count >= 6 ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(password.count >= 6 ? .green : .red)
-                                        
-                                        Text("At least 6 characters")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(password.count >= 6 ? .green : .red)
-                                        
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal, 4)
-                                }
-                            }
-                            .opacity(animateFields ? 1.0 : 0.0)
-                            .offset(x: animateFields ? 0 : -50)
-                            
-                            // Phone Number Field
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Phone Number")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.black.opacity(0.8))
-                                
-                                HStack(spacing: 12) {
-                                    Image(systemName: "phone.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
-                                        .frame(width: 24)
-                                    
-                                    TextField("Enter your phone number", text: $phoneNumber)
-                                        .font(.system(size: 16))
-                                        .keyboardType(.phonePad)
-                                        .foregroundColor(.black)
-                                }
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 18)
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(
-                                            phoneNumber.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
-                                            lineWidth: 1.5
-                                        )
-                                )
-                                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
-                            }
-                            .opacity(animateFields ? 1.0 : 0.0)
-                            .offset(x: animateFields ? 0 : -50)
-                        }
-                        .padding(.horizontal, 24)
-                        
-                        // Terms and Conditions
-                        HStack(spacing: 8) {
-                            Image(systemName: "info.circle.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
-                            
-                            Text("By signing up, you agree to our Terms of Service and Privacy Policy")
-                                .font(.system(size: 12))
-                                .foregroundColor(.gray)
-                                .multilineTextAlignment(.leading)
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 24)
-                        .opacity(animateFields ? 1.0 : 0.0)
-                        
-                        // Sign Up Button
-                        Button(action: {
-                            signUpUser()
-                        }) {
-                            HStack(spacing: 12) {
-                                if isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                        .scaleEffect(0.9)
-                                } else {
-                                    Image(systemName: "person.badge.plus.fill")
-                                        .font(.system(size: 16, weight: .semibold))
-                                }
-                                
-                                Text(isLoading ? "Creating Account..." : "Create Account")
-                                    .font(.system(size: 18, weight: .semibold))
-                            }
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
-                            .background(
-                                LinearGradient(
-                                    colors: isLoading ?
-                                    [Color.blue.opacity(0.7), Color.blue.opacity(0.5)] :
-                                    [Color(red: 0.1, green: 0.4, blue: 0.8), Color(red: 0.2, green: 0.6, blue: 0.9)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .cornerRadius(16)
-                            .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
-                        }
-                        .disabled(isLoading)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 32)
-                        .scaleEffect(animateButton ? 1.0 : 0.9)
-                        .opacity(animateButton ? 1.0 : 0.0)
-                        
-                        // Login Link
-                        VStack(spacing: 12) {
-                            Text("Already have an account?")
-                                .font(.system(size: 16))
-                                .foregroundColor(.gray)
-                            
-                            Button(action: {
-                                onLoginTapped()
-                            }) {
-                                Text("Sign In Instead")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(
-                                        LinearGradient(
-                                            colors: [Color(red: 0.1, green: 0.4, blue: 0.8), Color(red: 0.2, green: 0.6, blue: 0.9)],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 18)
+                                    .background(Color.white)
+                                    .cornerRadius(16)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                password.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
+                                                lineWidth: 1.5
+                                            )
                                     )
+                                    .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                                    
+                                    // Password requirements
+                                    if !password.isEmpty {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: password.count >= 6 ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(password.count >= 6 ? .green : .red)
+                                            
+                                            Text("At least 6 characters")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(password.count >= 6 ? .green : .red)
+                                            
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal, 4)
+                                    }
+                                }
+                                .opacity(animateFields ? 1.0 : 0.0)
+                                .offset(x: animateFields ? 0 : -50)
+                                
+                                // Phone Number Field
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Phone Number")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.black.opacity(0.8))
+                                    
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "phone.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                                            .frame(width: 24)
+                                        
+                                        TextField("Enter your phone number", text: $phoneNumber)
+                                            .font(.system(size: 16))
+                                            .keyboardType(.phonePad)
+                                            .foregroundColor(.black)
+                                    }
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 18)
+                                    .background(Color.white)
+                                    .cornerRadius(16)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(
+                                                phoneNumber.isEmpty ? Color.gray.opacity(0.2) : Color(red: 0.1, green: 0.4, blue: 0.8).opacity(0.3),
+                                                lineWidth: 1.5
+                                            )
+                                    )
+                                    .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+                                }
+                                .opacity(animateFields ? 1.0 : 0.0)
+                                .offset(x: animateFields ? 0 : -50)
                             }
+                            .padding(.horizontal, 24)
+                            
+                            // Terms and Conditions
+                            HStack(spacing: 8) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color(red: 0.1, green: 0.4, blue: 0.8))
+                                
+                                Text("By signing up, you agree to our Terms of Service and Privacy Policy")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.gray)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 24)
+                            .opacity(animateFields ? 1.0 : 0.0)
+                            
+                            // Sign Up Button
+                            Button(action: {
+                                signUpUser()
+                            }) {
+                                HStack(spacing: 12) {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                            .scaleEffect(0.9)
+                                    } else {
+                                        Image(systemName: "person.badge.plus.fill")
+                                            .font(.system(size: 16, weight: .semibold))
+                                    }
+                                    
+                                    Text(isLoading ? "Creating Account..." : "Create Account")
+                                        .font(.system(size: 18, weight: .semibold))
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 56)
+                                .background(
+                                    LinearGradient(
+                                        colors: isLoading ?
+                                        [Color.blue.opacity(0.7), Color.blue.opacity(0.5)] :
+                                            [Color(red: 0.1, green: 0.4, blue: 0.8), Color(red: 0.2, green: 0.6, blue: 0.9)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(16)
+                                .shadow(color: Color.blue.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .disabled(isLoading)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 32)
+                            .scaleEffect(animateButton ? 1.0 : 0.9)
+                            .opacity(animateButton ? 1.0 : 0.0)
+                            
+                            // Login Link
+                            VStack(spacing: 12) {
+                                Text("Already have an account?")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.gray)
+                                
+                                Button(action: {
+                                    onLoginTapped()
+                                }) {
+                                    Text("Sign In Instead")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [Color(red: 0.1, green: 0.4, blue: 0.8), Color(red: 0.2, green: 0.6, blue: 0.9)],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                }
+                            }
+                            .padding(.top, 24)
+                            .padding(.bottom, max(geometry.safeAreaInsets.bottom + 20, 40))
+                            .opacity(animateButton ? 1.0 : 0.0)
+                            .offset(y: animateButton ? 0 : 20)
                         }
-                        .padding(.top, 24)
-                        .padding(.bottom, max(geometry.safeAreaInsets.bottom + 20, 40))
-                        .opacity(animateButton ? 1.0 : 0.0)
-                        .offset(y: animateButton ? 0 : 20)
                     }
                 }
+                
+                
+                
             }
         }
         .onAppear {

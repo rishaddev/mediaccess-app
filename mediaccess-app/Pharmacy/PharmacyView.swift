@@ -412,8 +412,8 @@ struct PharmacyView: View {
     }
 }
 
-struct PharmacyView_Previews: PreviewProvider {
-    static var previews: some View {
-        PharmacyView()
-    }
-}
+//struct PharmacyView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        PharmacyView()
+//    }
+//}

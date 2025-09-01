@@ -15,7 +15,6 @@ struct AppointmentDetail: Codable, Identifiable {
     let speciality: String
     let status: String
     
-    // Computed properties for UI compatibility
     var title: String {
         return "Consultation - \(speciality)"
     }
@@ -40,7 +39,6 @@ struct HomevisitDetail: Codable, Identifiable {
     let visitDate: String
     let visitTime: String
     
-    // Computed properties for UI compatibility
     var title: String {
         return "Home Visit - \(services.joined(separator: ", "))"
     }
@@ -277,12 +275,11 @@ struct AppointmentsView: View {
     
     private func appointmentCard(_ appointment: AppointmentDetail) -> some View {
         AppointmentCard(
-            speciality: appointment.title, // Uses computed property: "Consultation - \(speciality)"
+            speciality: appointment.title,
             doctorName: appointment.doctorName,
             appointmentDate: appointment.appointmentDate,
             appointmentTime: appointment.appointmentTime,
             onTapped: {
-                // Simply pass the existing appointment - no need to recreate it
                 selectedAppointment = appointment
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showAppointmentDetails = true
@@ -507,7 +504,6 @@ struct AppointmentsView: View {
     }
 
     
-    // Helper function to get initials from name
     private func getInitials(from name: String) -> String {
         let components = name.components(separatedBy: " ")
         let initials = components.compactMap { $0.first }.map { String($0) }
@@ -550,7 +546,6 @@ struct AppointmentsView: View {
                 }
                 
                 do {
-                    // Create wrapper struct to match API response
                     struct AppointmentsResponse: Codable {
                         let appointments: [AppointmentDetail]
                     }
@@ -599,7 +594,6 @@ struct AppointmentsView: View {
                 }
                 
                 do {
-                    // Updated wrapper struct to match the actual API response
                     struct HomeVisitsResponse: Codable {
                         let homevisits: [HomevisitDetail]
                         let count: Int
@@ -612,7 +606,6 @@ struct AppointmentsView: View {
                     
                 } catch {
                     print("Home visit decoding error: \(error)")
-                    // Debug: Print the raw response to see what we're actually getting
                     if let responseString = String(data: data, encoding: .utf8) {
                         print("Raw response: \(responseString)")
                     }
@@ -668,7 +661,6 @@ struct HomeVisitCardView: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                // Home Visit Icon
                 ZStack {
                     Circle()
                         .fill(Color.green.opacity(0.1))
@@ -709,7 +701,6 @@ struct HomeVisitCardView: View {
                     .background(Color.green.opacity(0.1))
                     .cornerRadius(6)
                     
-                    // Status badge
                     Text(homeVisit.status.uppercased())
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(homeVisit.status.lowercased() == "pending" ? .orange : .green)
@@ -736,11 +727,11 @@ struct HomeVisitCardView: View {
     }
 }
 
-struct AppointmentsView_Previews: PreviewProvider {
-    static var previews: some View {
-        AppointmentsView(
-            onBookAppointment: {},
-            onBookHomeVisit: {}
-        )
-    }
-}
+//struct AppointmentsView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        AppointmentsView(
+//            onBookAppointment: {},
+//            onBookHomeVisit: {}
+//        )
+//    }
+//}
