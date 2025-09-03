@@ -36,6 +36,11 @@ struct FamilyView: View {
             loadFamilyMembers()
 //            fetchFamilyAppointments()
         }
+        .onChange(of: showAddMember) { _, isShowing in
+            if !isShowing {
+                loadFamilyMembers()
+            }
+        }
     }
     
     private var mainContent: some View {
@@ -421,7 +426,6 @@ struct FamilyView: View {
             
             Spacer()
             
-            // Arrow indicator
             Image(systemName: "chevron.right")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.gray.opacity(0.6))
@@ -525,7 +529,6 @@ struct FamilyView: View {
                         }
                         allAppointments.append(contentsOf: mapped)
                     } catch {
-                        // Ignore errors for individual dependents
                     }
                 }
             }.resume()

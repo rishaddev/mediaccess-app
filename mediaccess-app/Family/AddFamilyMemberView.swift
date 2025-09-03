@@ -222,7 +222,7 @@ struct AddFamilyMemberView: View {
             .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
     }
-
+    
     
     private func memberInfoField(
         title: String,
@@ -374,70 +374,84 @@ struct AddFamilyMemberView: View {
         
         isAdding = true
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            isAdding = false
-            
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            
-            alertMessage = "🎉 Dependent successfully added!\n\nGuardian: \(primaryUserName)\nDependent: \(dependentName)\nRelationship: \(memberRelationship)\nDate of Birth: \(selectedDate)\nGender: \(gender)\n"
+        guard let url = URL(string: "https://mediaccess.vercel.app/api/dependent/add") else {
+            alertMessage = "Invalid API endpoint"
             showAlert = true
+            isAdding = false
+            return
         }
         
-         guard let url = URL(string: "https://mediaccess.vercel.app/api/dependent/add") else {
-         alertMessage = "Invalid API endpoint"
-         showAlert = true
-         isAdding = false
-         return
-         }
-         
-         let formatter = DateFormatter()
-         formatter.dateFormat = "yyyy-MM-dd"
-         
-         let dependent = [
-         "guardianId": primaryUserId,
-         "name": dependentName,
-         "relationship": memberRelationship,
-         "dateOfBirth": selectedDate,
-         "gender": gender,
-         "contactNumber": contactNumber
-         ]
-         
-         var request = URLRequest(url: url)
-         request.httpMethod = "POST"
-         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-         
-         do {
-         let jsonData = try JSONSerialization.data(withJSONObject: dependent)
-         request.httpBody = jsonData
-         
-         URLSession.shared.dataTask(with: request) { data, response, error in
-         DispatchQueue.main.async {
-         isAdding = false
-         
-         if let error = error {
-         alertMessage = "Network error: \(error.localizedDescription)"
-         showAlert = true
-         return
-         }
-         
-         if let httpResponse = response as? HTTPURLResponse {
-         if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-         alertMessage = "🎉 Dependent successfully added!"
-         showAlert = true
-         } else {
-         alertMessage = "Failed to add dependent"
-         showAlert = true
-         }
-         }
-         }
-         }.resume()
-         
-         } catch {
-         isAdding = false
-         alertMessage = "Failed to prepare dependent data: \(error.localizedDescription)"
-         showAlert = true
-         }
+        let payload: [String: Any] = [
+            "guardianId": primaryUserId,
+            "name": name,
+            "relationship": relationship,
+            "dateOfBirth": selectedDate,
+            "gender": gender,
+            "contactNumber": contactNumber
+        ]
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: payload)
+            request.httpBody = jsonData
+            
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                DispatchQueue.main.async {
+                    self.isAdding = false
+                    
+                    if let error = error {
+                        self.alertMessage = "Network error: \(error.localizedDescription)"
+                        self.showAlert = true
+                        return
+                    }
+                    
+                    if let httpResponse = response as? HTTPURLResponse {
+                        if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+                            var responseId = UUID().uuidString
+                            
+                            if let data = data,
+                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                               let newId = json["dependentPatientId"] as? String {
+                                responseId = newId
+                            }
+                            
+                            let newDependent = Dependent(
+                                id: responseId,
+                                name: self.name,
+                                relationship: self.relationship,
+                                dob: self.selectedDate
+                            )
+                            
+                            var dependents: [Dependent] = []
+                            if let data = UserDefaults.standard.data(forKey: "dependents"),
+                               let saved = try? JSONDecoder().decode([Dependent].self, from: data) {
+                                dependents = saved
+                            }
+                            
+                            dependents.append(newDependent)
+                            
+                            if let updatedData = try? JSONEncoder().encode(dependents) {
+                                UserDefaults.standard.set(updatedData, forKey: "dependents")
+                            }
+                            
+                            self.alertMessage = "🎉 Dependent successfully added!"
+                            self.showAlert = true
+                        } else {
+                            self.alertMessage = "Failed to add dependent"
+                            self.showAlert = true
+                        }
+                    }
+                }
+            }.resume()
+            
+        } catch {
+            isAdding = false
+            alertMessage = "Failed to prepare dependent data: \(error.localizedDescription)"
+            showAlert = true
+        }
     }
 }
 
