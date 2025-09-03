@@ -34,11 +34,12 @@ struct FamilyView: View {
         }
         .onAppear {
             loadFamilyMembers()
-//            fetchFamilyAppointments()
+            fetchFamilyAppointments()
         }
         .onChange(of: showAddMember) { _, isShowing in
             if !isShowing {
                 loadFamilyMembers()
+                fetchFamilyAppointments() // Refresh appointments when a new member is added
             }
         }
     }
@@ -310,11 +311,11 @@ struct FamilyView: View {
     private var pastAppointmentsHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Recent Activity")
+                Text("Family Appointments")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.black)
                 
-                Text("Family appointments & visits")
+                Text("Recent appointments for dependents")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.gray)
             }
@@ -369,7 +370,7 @@ struct FamilyView: View {
                 .progressViewStyle(CircularProgressViewStyle(tint: .blue))
                 .scaleEffect(1.2)
             
-            Text("Loading family activities...")
+            Text("Loading family appointments...")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.gray)
         }
@@ -398,30 +399,45 @@ struct FamilyView: View {
                     .foregroundColor(.blue)
             }
             
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 2) {
+                if let memberName = appointment.memberName, !memberName.isEmpty {
+                    Text(memberName)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.blue)
+                        .padding(.bottom, 3)
+                }
+                
+                
                 Text(appointment.title)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.black)
-                    .lineLimit(1)
+                //                    .lineLimit(1)
                 
                 Text(appointment.doctor)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.gray)
                     .lineLimit(1)
+                    .padding(.bottom, 4)
                 
                 HStack(spacing: 8) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 12))
-                        .foregroundColor(.blue)
+                    HStack(spacing: 4) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 10))
+                        Text(appointment.date)
+                            .font(.system(size: 12))
+                    }
                     
-                    Text(appointment.date)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.blue)
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 10))
+                        Text(appointment.date)
+                            .font(.system(size: 12))
+                    }
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .foregroundColor(.blue)
+                .padding(8)
                 .background(Color.blue.opacity(0.1))
-                .cornerRadius(8)
+                .cornerRadius(6)
             }
             
             Spacer()
@@ -429,6 +445,26 @@ struct FamilyView: View {
             Image(systemName: "chevron.right")
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(.gray.opacity(0.6))
+            
+            //            if let memberName = appointment.memberName {
+            //                VStack(alignment: .trailing, spacing: 4) {
+            //                    Text(memberName)
+            //                        .font(.system(size: 12, weight: .medium))
+            //                        .foregroundColor(.blue)
+            //                        .padding(.horizontal, 8)
+            //                        .padding(.vertical, 2)
+            //                        .background(Color.blue.opacity(0.1))
+            //                        .cornerRadius(6)
+            //
+            //                    Image(systemName: "chevron.right")
+            //                        .font(.system(size: 16, weight: .semibold))
+            //                        .foregroundColor(.gray.opacity(0.6))
+            //                }
+            //            } else {
+            //                Image(systemName: "chevron.right")
+            //                    .font(.system(size: 16, weight: .semibold))
+            //                    .foregroundColor(.gray.opacity(0.6))
+            //            }
         }
         .padding(20)
         .background(Color.white)
@@ -455,11 +491,11 @@ struct FamilyView: View {
             }
             
             VStack(spacing: 8) {
-                Text("No Recent Activity")
+                Text("No Family Appointments")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.black)
                 
-                Text("Family appointments and visits will appear here")
+                Text("Appointments for family members will appear here")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
@@ -493,14 +529,19 @@ struct FamilyView: View {
         isLoadingFamilyAppointments = true
         familyAppointments = []
         
+        // Only get dependents (excluding the logged-in user)
         guard let dependentsData = UserDefaults.standard.data(forKey: "dependents"),
-              let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData) else {
+              let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData),
+              !dependents.isEmpty else {
             isLoadingFamilyAppointments = false
             return
         }
         
         let group = DispatchGroup()
         var allAppointments: [PastAppointment] = []
+        
+        // Create a mapping of dependent IDs to names for reference
+        let dependentMap = Dictionary(uniqueKeysWithValues: dependents.map { ($0.id, $0.name) })
         
         for dependent in dependents {
             group.enter()
@@ -512,31 +553,62 @@ struct FamilyView: View {
             
             URLSession.shared.dataTask(with: url) { data, response, error in
                 defer { group.leave() }
+                
+                if let error = error {
+                    print("Error fetching appointments for \(dependent.name): \(error.localizedDescription)")
+                    return
+                }
+                
                 if let data = data {
                     do {
                         struct AppointmentDetail: Codable, Identifiable {
                             let id: String
-                            let title: String
-                            let doctor: String
-                            let date: String
+                            let doctorName: String
+                            let speciality: String
+                            let appointmentDate: String
+                            let appointmentTime: String
+                            let patientName: String
+                            // Add other fields as needed
                         }
                         struct AppointmentsResponse: Codable {
                             let appointments: [AppointmentDetail]
                         }
+                        
                         let response = try JSONDecoder().decode(AppointmentsResponse.self, from: data)
                         let mapped = response.appointments.map {
-                            PastAppointment(title: $0.title, doctor: $0.doctor, date: $0.date)
+                            PastAppointment(
+                                title: $0.speciality,
+                                doctor: $0.doctorName,
+                                date: $0.appointmentDate,
+                                memberName: dependent.name
+                            )
                         }
                         allAppointments.append(contentsOf: mapped)
                     } catch {
+                        print("Error decoding appointments for \(dependent.name): \(error.localizedDescription)")
                     }
                 }
             }.resume()
         }
         
         group.notify(queue: .main) {
-            self.familyAppointments = allAppointments
+            self.familyAppointments = allAppointments.sorted { appointment1, appointment2 in
+                return appointment1.date > appointment2.date
+            }
             self.isLoadingFamilyAppointments = false
+        }
+    }
+    
+    private func formatAppointmentDate(_ dateString: String, time timeString: String) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        if let date = dateFormatter.date(from: dateString) {
+            dateFormatter.dateFormat = "MMM dd, yyyy"
+            let formattedDate = dateFormatter.string(from: date)
+            return "\(formattedDate) at \(timeString)"
+        } else {
+            return "\(dateString) at \(timeString)"
         }
     }
     
@@ -609,10 +681,19 @@ struct PastAppointment: Identifiable {
     let title: String
     let doctor: String
     let date: String
+    let memberName: String? // Add this to track which family member the appointment belongs to
+    
+    // Updated initializer to include memberName
+    init(title: String, doctor: String, date: String, memberName: String? = nil) {
+        self.title = title
+        self.doctor = doctor
+        self.date = date
+        self.memberName = memberName
+    }
     
     static let sampleData = [
-        PastAppointment(title: "Annual Checkup", doctor: "Dr. Emily Clark", date: "Jan 15, 2024"),
-        PastAppointment(title: "Vaccination", doctor: "Dr. Michael Brown", date: "Oct 22, 2023")
+        PastAppointment(title: "Annual Checkup", doctor: "Dr. Emily Clark", date: "Jan 15, 2024", memberName: "Sarah"),
+        PastAppointment(title: "Vaccination", doctor: "Dr. Michael Brown", date: "Oct 22, 2023", memberName: "John")
     ]
 }
 

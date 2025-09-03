@@ -210,13 +210,30 @@ struct FamilyMemberDetailsView: View {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                     if let appointmentsArray = json["appointments"] as? [[String: Any]] {
                         fetchedAppointments = appointmentsArray.compactMap { appointmentDict in
-                            guard let id = appointmentDict["id"] as? String,
-                                  let title = appointmentDict["title"] as? String,
-                                  let doctor = appointmentDict["doctor"] as? String,
-                                  let date = appointmentDict["date"] as? String else {
+                            // Updated parsing to match actual API response structure
+                            guard let id = appointmentDict["id"] as? String else {
                                 return nil
                             }
-                            return MemberAppointment(id: UUID(), title: title, doctor: doctor, date: date)
+                            
+                            // Use the actual field names from the API response
+                            let patientName = appointmentDict["patientName"] as? String ?? "Unknown Patient"
+                            let doctorName = appointmentDict["doctorName"] as? String ?? "Unknown Doctor"
+                            let speciality = appointmentDict["speciality"] as? String ?? ""
+                            let appointmentDate = appointmentDict["appointmentDate"] as? String ?? ""
+                            let appointmentTime = appointmentDict["appointmentTime"] as? String ?? ""
+                            
+                            // Create a meaningful title
+                            let title = !speciality.isEmpty ? "\(speciality) Consultation" : "Medical Appointment"
+                            
+                            // Format the date string (combine date and time if available)
+                            let dateString = !appointmentTime.isEmpty ? "\(appointmentDate) \(appointmentTime)" : appointmentDate
+                            
+                            return MemberAppointment(
+                                id: UUID(),
+                                title: title,
+                                doctor: doctorName,
+                                date: dateString
+                            )
                         }
                     } else if json["appointments"] is NSNull || json["appointments"] == nil {
                         fetchedAppointments = []
@@ -253,7 +270,8 @@ struct FamilyMemberDetailsView: View {
             
             do {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    if let visitsArray = json["homeVisits"] as? [[String: Any]] ?? json["visits"] as? [[String: Any]] {
+                    // Updated to check for "homevisits" (lowercase) as shown in the API response
+                    if let visitsArray = json["homevisits"] as? [[String: Any]] ?? json["homeVisits"] as? [[String: Any]] ?? json["visits"] as? [[String: Any]] {
                         fetchedHomeVisits = visitsArray.compactMap { visitDict in
                             guard let id = visitDict["id"] as? String,
                                   let title = visitDict["title"] as? String,
@@ -296,7 +314,8 @@ struct FamilyMemberDetailsView: View {
             
             do {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    if let ordersArray = json["pharmacyorders"] as? [[String: Any]] ?? json["orders"] as? [[String: Any]] {
+                    // Updated to check for "pharmacyorders" (lowercase) as shown in the API response
+                    if let ordersArray = json["pharmacyorders"] as? [[String: Any]] ?? json["pharmacyOrders"] as? [[String: Any]] ?? json["orders"] as? [[String: Any]] {
                         fetchedPharmacyOrders = ordersArray.compactMap { orderDict in
                             guard let id = orderDict["id"] as? String,
                                   let patientName = orderDict["patientName"] as? String,

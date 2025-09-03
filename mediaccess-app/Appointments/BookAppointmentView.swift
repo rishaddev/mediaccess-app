@@ -1,17 +1,15 @@
 import SwiftUI
 import MapKit
 
-// Updated Doctor model to match API response
 struct Doctor: Codable, Identifiable {
     let id: String
     let name: String
-    let speciality: String // Note: "speciality" not "specialty"
+    let speciality: String
     let email: String
     let imageURL: String
     let createdDate: String
     let createdTime: String
     
-    // Custom coding keys to handle the field name difference
     enum CodingKeys: String, CodingKey {
         case id
         case name
@@ -22,13 +20,22 @@ struct Doctor: Codable, Identifiable {
         case createdTime
     }
     
-    // Computed property to maintain compatibility with existing UI code
     var specialty: String {
         return speciality
     }
 }
 
-// Appointment data structure for API
+struct PatientOption: Identifiable {
+    let id: String
+    let name: String
+    let relationship: String
+    let dob: String
+    
+    var displayName: String {
+        return "\(name) (\(relationship))"
+    }
+}
+
 struct AppointmentBookingRequest: Codable {
     let patientId: String
     let patientName: String
@@ -47,6 +54,7 @@ struct BookAppointmentView: View {
     @State private var selectedTime = ""
     @State private var showingDatePicker = false
     @State private var showingTimePicker = false
+    @State private var showingPatientPicker = false
     @State private var date = Date()
     @State private var doctors: [Doctor] = []
     @State private var isLoading = false
@@ -54,42 +62,19 @@ struct BookAppointmentView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     
-    // Editable patient details
+    @State private var patientOptions: [PatientOption] = []
+    @State private var selectedPatient: PatientOption?
+    
     @State private var editablePatientName = ""
     @State private var editableContactNumber = ""
     @State private var editableDob = ""
     
     let onBackTapped: () -> Void
     
-    // Patient details from UserDefaults
-    private var patientId: String {
-        return UserDefaults.standard.string(forKey: "id") ?? ""
-    }
-    
-    private var storedPatientName: String {
-        if let storedName = UserDefaults.standard.string(forKey: "name"), !storedName.isEmpty {
-            return storedName
-        }
-        
-        let email = UserDefaults.standard.string(forKey: "email") ?? ""
-        if email.contains("@") {
-            let username = String(email.split(separator: "@").first ?? "User")
-            return username.replacingOccurrences(of: ".", with: " ")
-                          .replacingOccurrences(of: "_", with: " ")
-                          .capitalized
-        }
-        return email.capitalized
-    }
-    
-    private var storedContactNumber: String {
+    private var guardianContactNumber: String {
         return UserDefaults.standard.string(forKey: "contactNumber") ?? ""
     }
     
-    private var storedDob: String {
-        return UserDefaults.standard.string(forKey: "dob") ?? ""
-    }
-    
-    // Filtered doctors based on search text
     private var filteredDoctors: [Doctor] {
         if searchText.isEmpty {
             return doctors
@@ -107,6 +92,7 @@ struct BookAppointmentView: View {
             
             ScrollView {
                 VStack(spacing: 20) {
+                    patientSelectionSection
                     patientDetailsSection
                     searchDoctorsSection
                     selectedDoctorSection
@@ -122,8 +108,11 @@ struct BookAppointmentView: View {
         }
         .background(Color(.systemGroupedBackground))
         .onAppear {
-            initializePatientDetails()
+            loadPatientOptions()
             fetchDoctors()
+        }
+        .sheet(isPresented: $showingPatientPicker) {
+            patientPickerSheet
         }
         .sheet(isPresented: $showingDatePicker) {
             datePickerSheet
@@ -133,7 +122,6 @@ struct BookAppointmentView: View {
         }
         .alert("Booking Status", isPresented: $showAlert) {
             Button("OK") {
-                // Reset form after successful booking
                 if alertMessage.contains("successfully") {
                     resetForm()
                 }
@@ -143,7 +131,6 @@ struct BookAppointmentView: View {
         }
     }
     
-    // MARK: - Header View
     private var headerView: some View {
         HStack {
             Button(action: onBackTapped) {
@@ -167,7 +154,6 @@ struct BookAppointmentView: View {
             
             Spacer()
             
-            // Invisible button for balance
             Circle()
                 .fill(Color.clear)
                 .frame(width: 40, height: 40)
@@ -178,7 +164,106 @@ struct BookAppointmentView: View {
         .background(Color(.systemGroupedBackground))
     }
     
-    // MARK: - Patient Details Section
+    private var patientSelectionSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Select Patient")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.black)
+            
+            Button(action: {
+                showingPatientPicker = true
+            }) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.green.opacity(0.1))
+                            .frame(width: 35, height: 35)
+                        
+                        Image(systemName: "person.circle")
+                            .font(.system(size: 14))
+                            .foregroundColor(.green)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Patient")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                        
+                        Text(selectedPatient?.displayName ?? "Select Patient")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(selectedPatient != nil ? .black : .gray)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                }
+                .padding(16)
+                .background(Color.white)
+                .cornerRadius(12)
+                .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+            }
+        }
+    }
+    
+    private var patientPickerSheet: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                List(patientOptions, id: \.id) { patient in
+                    Button(action: {
+                        selectedPatient = patient
+                        updatePatientDetails(for: patient)
+                        showingPatientPicker = false
+                    }) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(patient.relationship == "Self" ? Color.green.opacity(0.1) : Color.blue.opacity(0.1))
+                                    .frame(width: 40, height: 40)
+                                
+                                Image(systemName: patient.relationship == "Self" ? "person.crop.circle.fill" : "person.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(patient.relationship == "Self" ? .green : .blue)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(patient.name)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.black)
+                                
+                                Text(patient.relationship)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Spacer()
+                            
+                            if selectedPatient?.id == patient.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                    .font(.system(size: 18))
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .navigationTitle("Select Patient")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        showingPatientPicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+    
     private var patientDetailsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Patient Information")
@@ -186,9 +271,9 @@ struct BookAppointmentView: View {
                 .foregroundColor(.black)
             
             VStack(spacing: 12) {
-                patientInfoField(title: "Full Name", value: $editablePatientName, placeholder: "Enter your full name", icon: "person.fill")
-                patientInfoField(title: "Contact Number", value: $editableContactNumber, placeholder: "Enter your contact number", icon: "phone.fill")
-                patientInfoField(title: "Date of Birth", value: $editableDob, placeholder: "Enter your date of birth (YYYY-MM-DD)", icon: "calendar")
+                patientInfoField(title: "Full Name", value: $editablePatientName, placeholder: "Enter patient's full name", icon: "person.fill")
+                patientInfoField(title: "Contact Number", value: $editableContactNumber, placeholder: "Enter contact number", icon: "phone.fill")
+                patientInfoField(title: "Date of Birth", value: $editableDob, placeholder: "Enter date of birth (YYYY-MM-DD)", icon: "calendar")
             }
             .padding(16)
             .background(Color.white)
@@ -226,7 +311,6 @@ struct BookAppointmentView: View {
         }
     }
     
-    // MARK: - Search Doctors Section
     private var searchDoctorsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Search Doctors")
@@ -248,7 +332,6 @@ struct BookAppointmentView: View {
         }
     }
     
-    // MARK: - Selected Doctor Section
     @ViewBuilder
     private var selectedDoctorSection: some View {
         if let selectedDoctor = selectedDoctor {
@@ -312,7 +395,6 @@ struct BookAppointmentView: View {
         )
     }
     
-    // MARK: - Available Doctors Section
     private var availableDoctorsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Available Doctors")
@@ -435,7 +517,6 @@ struct BookAppointmentView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Doctor Icon Helper
     private func doctorIcon() -> some View {
         ZStack {
             Circle()
@@ -448,7 +529,6 @@ struct BookAppointmentView: View {
         }
     }
     
-    // MARK: - Select Date & Time Section
     private var selectDateTimeSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Select Date & Time")
@@ -538,7 +618,6 @@ struct BookAppointmentView: View {
         }
     }
     
-    // MARK: - Book Appointment Button
     private var bookAppointmentButton: some View {
         Button(action: bookAppointment) {
             HStack {
@@ -571,7 +650,6 @@ struct BookAppointmentView: View {
         .padding(.bottom, 30)
     }
     
-    // MARK: - Sheet Views
     private var datePickerSheet: some View {
         NavigationView {
             VStack {
@@ -622,11 +700,9 @@ struct BookAppointmentView: View {
         .presentationDetents([.medium])
     }
     
-    // MARK: - Helper Properties and Functions
-    
-    // Check if booking is enabled (all required fields are filled)
     private var isBookingEnabled: Bool {
-        return selectedDoctor != nil &&
+        return selectedPatient != nil &&
+               selectedDoctor != nil &&
                !selectedDate.isEmpty &&
                !selectedTime.isEmpty &&
                !editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
@@ -634,26 +710,71 @@ struct BookAppointmentView: View {
                !editableDob.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    // Initialize patient details
-    private func initializePatientDetails() {
-        editablePatientName = storedPatientName
-        editableContactNumber = storedContactNumber
-        editableDob = storedDob
+    private func loadPatientOptions() {
+        var options: [PatientOption] = []
+        
+        let primaryUserId = UserDefaults.standard.string(forKey: "id") ?? ""
+        let primaryUserName = getPrimaryUserName()
+        let primaryUserDob = UserDefaults.standard.string(forKey: "dob") ?? ""
+        
+        let primaryUser = PatientOption(
+            id: primaryUserId,
+            name: primaryUserName,
+            relationship: "Self",
+            dob: primaryUserDob
+        )
+        options.append(primaryUser)
+        
+        if let dependentsData = UserDefaults.standard.data(forKey: "dependents"),
+           let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData) {
+            let dependentOptions = dependents.map { dependent in
+                PatientOption(
+                    id: dependent.id,
+                    name: dependent.name,
+                    relationship: dependent.relationship,
+                    dob: dependent.dob
+                )
+            }
+            options.append(contentsOf: dependentOptions)
+        }
+        
+        patientOptions = options
+        
+        selectedPatient = primaryUser
+        updatePatientDetails(for: primaryUser)
     }
     
-    // Reset form after successful booking
+    private func getPrimaryUserName() -> String {
+        if let storedName = UserDefaults.standard.string(forKey: "name"), !storedName.isEmpty {
+            return storedName
+        }
+        
+        let email = UserDefaults.standard.string(forKey: "email") ?? ""
+        if email.contains("@") {
+            let username = String(email.split(separator: "@").first ?? "User")
+            return username.replacingOccurrences(of: ".", with: " ")
+                          .replacingOccurrences(of: "_", with: " ")
+                          .capitalized
+        }
+        return email.capitalized
+    }
+    
+    private func updatePatientDetails(for patient: PatientOption) {
+        editablePatientName = patient.name
+        editableDob = patient.dob
+        editableContactNumber = guardianContactNumber
+    }
+    
     private func resetForm() {
         selectedDoctor = nil
         selectedDate = ""
         selectedTime = ""
         searchText = ""
-        // Keep patient details for next booking
     }
     
-    // Prepare appointment data for API
     private func prepareAppointmentData() -> AppointmentBookingRequest {
         return AppointmentBookingRequest(
-            patientId: patientId,
+            patientId: selectedPatient?.id ?? "",
             patientName: editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines),
             contactNumber: editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines),
             dob: editableDob.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -690,7 +811,6 @@ struct BookAppointmentView: View {
                 }
                 
                 do {
-                    // Create a wrapper struct to match the API response
                     struct DoctorsResponse: Codable {
                         let allDoctors: [Doctor]
                     }
@@ -701,7 +821,7 @@ struct BookAppointmentView: View {
                     print("Successfully loaded \(self.doctors.count) doctors") // Debug log
                     
                 } catch {
-                    print("Decoding error: \(error)") // Debug log
+                    print("Decoding error: \(error)")
                     alertMessage = "Failed to parse doctors data: \(error.localizedDescription)"
                     showAlert = true
                 }
@@ -709,33 +829,37 @@ struct BookAppointmentView: View {
         }.resume()
     }
     
-    // Book appointment function with API integration
     private func bookAppointment() {
+        guard let patient = selectedPatient else {
+            alertMessage = "Please select a patient"
+            showAlert = true
+            return
+        }
+        
         guard let doctor = selectedDoctor else {
             alertMessage = "Please select a doctor"
             showAlert = true
             return
         }
         
-        // Validate required fields
         let patientName = editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines)
         let contactNumber = editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines)
         let dob = editableDob.trimmingCharacters(in: .whitespacesAndNewlines)
         
         if patientName.isEmpty {
-            alertMessage = "Please enter your full name"
+            alertMessage = "Please enter patient's full name"
             showAlert = true
             return
         }
         
         if contactNumber.isEmpty {
-            alertMessage = "Please enter your contact number"
+            alertMessage = "Please enter contact number"
             showAlert = true
             return
         }
         
         if dob.isEmpty {
-            alertMessage = "Please enter your date of birth"
+            alertMessage = "Please enter date of birth"
             showAlert = true
             return
         }
@@ -770,17 +894,13 @@ struct BookAppointmentView: View {
                     
                     if let httpResponse = response as? HTTPURLResponse {
                         if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-                            // Success
-                            alertMessage = "🎉 Appointment successfully booked!\n\nDoctor: \(doctor.name)\nSpecialty: \(doctor.specialty)\nDate: \(selectedDate)\nTime: \(selectedTime)\n\nYou will receive a confirmation shortly."
+                            alertMessage = "🎉 Appointment successfully booked!\n\nPatient: \(patientName)\nDoctor: \(doctor.name)\nSpecialty: \(doctor.specialty)\nDate: \(selectedDate)\nTime: \(selectedTime)\n\nYou will receive a confirmation shortly."
                             showAlert = true
                             
-                            // Update UserDefaults with the latest patient info
-                            UserDefaults.standard.set(patientName, forKey: "userName")
+                            // Save updated contact details
                             UserDefaults.standard.set(contactNumber, forKey: "contactNumber")
-                            UserDefaults.standard.set(dob, forKey: "dob")
                             
                         } else {
-                            // Handle server errors
                             if let data = data,
                                let errorMessage = String(data: data, encoding: .utf8) {
                                 alertMessage = "Booking failed: \(errorMessage)"
@@ -804,8 +924,8 @@ struct BookAppointmentView: View {
     }
 }
 
-//struct BookAppointmentView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        BookAppointmentView(onBackTapped: {})
-//    }
-//}
+struct BookAppointmentView_Previews: PreviewProvider {
+    static var previews: some View {
+        BookAppointmentView(onBackTapped: {})
+    }
+}
