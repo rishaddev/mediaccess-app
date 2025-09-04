@@ -531,7 +531,6 @@ struct BookHomeVisitView: View {
         }
     }
     
-    // MARK: - Header View
     private var headerView: some View {
         HStack {
             Button(action: onBackTapped) {
@@ -565,7 +564,6 @@ struct BookHomeVisitView: View {
         .background(Color(.systemGroupedBackground))
     }
     
-    // MARK: - Patient Details Section
     private var patientDetailsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Patient Information")
@@ -612,7 +610,6 @@ struct BookHomeVisitView: View {
         }
     }
     
-    // MARK: - Select Services Section
     private var selectServicesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -670,7 +667,6 @@ struct BookHomeVisitView: View {
                 Spacer()
                 
                 VStack(spacing: 8) {
-                    // Service Icon
                     ZStack {
                         RoundedRectangle(cornerRadius: 12)
                             .fill(service.backgroundColor)
@@ -681,7 +677,6 @@ struct BookHomeVisitView: View {
                             .foregroundColor(.primary)
                     }
                     
-                    // Selection indicator
                     if selectedServices.contains(service.id) {
                         ZStack {
                             Circle()
@@ -711,7 +706,6 @@ struct BookHomeVisitView: View {
         .buttonStyle(PlainButtonStyle())
     }
     
-    // MARK: - Select Date & Time Section
     private var selectDateTimeSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Select Date & Time")
@@ -801,7 +795,6 @@ struct BookHomeVisitView: View {
         }
     }
     
-    // MARK: - Address Section (Enhanced with Map Integration)
     private var addressSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Service Address")
@@ -869,7 +862,6 @@ struct BookHomeVisitView: View {
                     }
                 }
                 
-                // Plus Code Display (Auto-generated from map selection)
                 if !plusCode.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 12) {
@@ -936,7 +928,6 @@ struct BookHomeVisitView: View {
         }
     }
     
-    // MARK: - Instructions Section
     private var instructionsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Special Instructions (Optional)")
@@ -977,7 +968,6 @@ struct BookHomeVisitView: View {
         }
     }
     
-    // MARK: - Book Home Visit Button
     private var bookHomeVisitButton: some View {
         Button(action: bookHomeVisit) {
             HStack {
@@ -1010,7 +1000,6 @@ struct BookHomeVisitView: View {
         .padding(.bottom, 30)
     }
     
-    // MARK: - Sheet Views
     private var datePickerSheet: some View {
         NavigationView {
             VStack {
@@ -1061,8 +1050,6 @@ struct BookHomeVisitView: View {
         .presentationDetents([.medium])
     }
     
-    // MARK: - Helper Properties and Functions
-    
     private var isBookingEnabled: Bool {
         return !selectedServices.isEmpty &&
                !selectedDate.isEmpty &&
@@ -1072,7 +1059,7 @@ struct BookHomeVisitView: View {
                !streetAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
                !city.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
                !postalCode.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               selectedLocation != nil // Now requires map selection
+               selectedLocation != nil
     }
     
     private func initializePatientDetails() {
@@ -1090,7 +1077,6 @@ struct BookHomeVisitView: View {
         plusCode = ""
         instructions = ""
         selectedLocation = nil
-        // Keep patient details for next booking
     }
     
     private func getSelectedServiceNames() -> [String] {
@@ -1112,7 +1098,7 @@ struct BookHomeVisitView: View {
             plusCode: plusCode.trimmingCharacters(in: .whitespacesAndNewlines),
             latitude: selectedLocation?.latitude ?? 0.0,
             longitude: selectedLocation?.longitude ?? 0.0,
-            cost: "0", // You can calculate this based on services
+            cost: "0",
             status: "Pending",
             instructions: instructions.trimmingCharacters(in: .whitespacesAndNewlines)
         )
@@ -1186,8 +1172,8 @@ struct BookHomeVisitView: View {
 }
 
 
-//struct BookHomeVisitView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        BookHomeVisitView(onBackTapped: {})
-//    }
-//}
+struct BookHomeVisitView_Previews: PreviewProvider {
+    static var previews: some View {
+        BookHomeVisitView(onBackTapped: {})
+    }
+}

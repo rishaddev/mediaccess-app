@@ -95,6 +95,8 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showPlaceNewOrder) {
             PlaceNewOrderView()
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Medical Dashboard")
     }
     
     private func getInitials(from name: String) -> String {
@@ -116,6 +118,8 @@ struct DashboardView: View {
                         Spacer(minLength: 100)
                     }
                 }
+                .accessibilityLabel("Dashboard content")
+                .accessibilityHint("Scroll to view all dashboard sections")
             }
             .onAppear {
                 fetchAppointments()
@@ -144,16 +148,22 @@ struct DashboardView: View {
                 .frame(width: 60, height: 60)
                 .clipShape(Circle())
             }
+            .accessibilityLabel("Profile picture for \(displayName)")
+            .accessibilityHint("Double tap to open profile settings")
+            .accessibilityAddTraits(.isButton)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Hi, \(displayName)")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.black)
+                    .accessibilityLabel("Welcome message: Hi, \(displayName)")
                 
                 Text("How are you feeling today")
                     .font(.system(size: 14))
                     .foregroundColor(.gray)
+                    .accessibilityLabel("Greeting: How are you feeling today")
             }
+            .accessibilityElement(children: .combine)
             
             Spacer()
             
@@ -167,9 +177,13 @@ struct DashboardView: View {
                 Circle()
                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
             )
+            .accessibilityLabel("Notifications")
+            .accessibilityHint("Double tap to view notifications")
+            .accessibilityAddTraits(.isButton)
         }
         .padding(.horizontal, 20)
         .padding(.top, 20)
+        .accessibilityElement(children: .contain)
     }
     
     private var nextAppointmentSection: some View {
@@ -180,6 +194,7 @@ struct DashboardView: View {
                     .foregroundColor(.black)
                 Spacer()
             }
+            .accessibilityAddTraits(.isHeader)
             
             if isLoadingAppointments {
                 VStack(spacing: 16) {
@@ -192,6 +207,9 @@ struct DashboardView: View {
                 .padding(.vertical, 40)
                 .background(Color.white)
                 .cornerRadius(12)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Loading appointments")
+                .accessibilityValue("Please wait while appointments are being loaded")
             } else if let nextAppointment = upcomingAppointments.first {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16)
@@ -214,6 +232,8 @@ struct DashboardView: View {
                         }
                         .frame(width: 100, height: 100)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .accessibilityLabel("Doctor image")
+                        .accessibilityHidden(true)
                         
                         VStack(alignment: .leading, spacing: 0) {
                             Text(nextAppointment.doctorName)
@@ -250,6 +270,11 @@ struct DashboardView: View {
                     }
                     .padding(10)
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Next appointment: \(nextAppointment.doctorName), \(nextAppointment.title)")
+                .accessibilityValue("Scheduled for \(formatDateForAccessibility(nextAppointment.appointmentDate)) at \(nextAppointment.appointmentTime)")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityHint("Your upcoming medical appointment")
             } else {
                 VStack(spacing: 12) {
                     ZStack {
@@ -261,6 +286,7 @@ struct DashboardView: View {
                             .font(.system(size: 24))
                             .foregroundColor(.gray)
                     }
+                    .accessibilityHidden(true)
                     
                     Text("No upcoming appointments")
                         .font(.system(size: 16, weight: .medium))
@@ -274,9 +300,20 @@ struct DashboardView: View {
                 .padding(.vertical, 40)
                 .background(Color.white)
                 .cornerRadius(12)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("No upcoming appointments")
+                .accessibilityHint("Book your first appointment using the appointment button below")
             }
         }
         .padding(.horizontal, 20)
+        .accessibilityElement(children: .contain)
+    }
+    
+    private func formatDateForAccessibility(_ dateString: String) -> String {
+        guard let date = dateFromString(dateString) else { return dateString }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        return formatter.string(from: date)
     }
     
     private var serviceIconsSection: some View {
@@ -284,17 +321,35 @@ struct DashboardView: View {
             Button(action: { showBookAppointment = true }) {
                 ServiceIconView(icon: "stethoscope", title: "Appointment", color: .blue)
             }
+            .accessibilityLabel("Book Appointment")
+            .accessibilityHint("Double tap to schedule a new medical appointment")
+            .accessibilityAddTraits(.isButton)
+            
             Button(action: { showBookHomeVisit = true }) {
                 ServiceIconView(icon: "house.fill", title: "Home Visit", color: .blue)
             }
+            .accessibilityLabel("Book Home Visit")
+            .accessibilityHint("Double tap to schedule a home visit from medical staff")
+            .accessibilityAddTraits(.isButton)
+            
             Button(action: { showServices = true }) {
                 ServiceIconView(icon: "cross.case.fill", title: "Services", color: .blue)
             }
+            .accessibilityLabel("Medical Services")
+            .accessibilityHint("Double tap to view available medical services")
+            .accessibilityAddTraits(.isButton)
+            
             Button(action: { showPlaceNewOrder = true }) {
                 ServiceIconView(icon: "pills.fill", title: "Pharmacy", color: .blue)
             }
+            .accessibilityLabel("Pharmacy Orders")
+            .accessibilityHint("Double tap to place a new pharmacy order")
+            .accessibilityAddTraits(.isButton)
         }
         .padding(.horizontal, 20)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Medical services")
+        .accessibilityHint("Four service options available")
     }
     
     private var promoCardSection: some View {
@@ -327,6 +382,9 @@ struct DashboardView: View {
                         .font(.system(size: 14))
                         .foregroundColor(.white.opacity(0.9))
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Special offer: 50% off on your next appointment. Book now!")
+                .accessibilityValue("Call 0112345678 to book")
                 
                 Spacer()
                 
@@ -345,10 +403,14 @@ struct DashboardView: View {
                 }
                 .frame(width: 120, height: 160)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .accessibilityHidden(true)
             }
             .padding(20)
         }
         .padding(.horizontal, 20)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Promotional offer for discounted appointments")
     }
     
     private var currentOrdersSection: some View {
@@ -364,6 +426,7 @@ struct DashboardView: View {
         } message: {
             Text(alertMessage)
         }
+        .accessibilityElement(children: .contain)
     }
     
     private var currentOrdersHeader: some View {
@@ -371,14 +434,19 @@ struct DashboardView: View {
             Text("Recent Orders")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.black)
+                .accessibilityAddTraits(.isHeader)
             Spacer()
             Button(action: {}) {
                 Text("View all")
                     .font(.system(size: 14))
                     .foregroundColor(.blue)
             }
+            .accessibilityLabel("View all orders")
+            .accessibilityHint("Double tap to see complete order history")
+            .accessibilityAddTraits(.isButton)
         }
         .padding(.horizontal, 20)
+        .accessibilityElement(children: .contain)
     }
     
     private var currentOrdersList: some View {
@@ -394,7 +462,7 @@ struct DashboardView: View {
                 if filteredOrders.isEmpty {
                     emptyOrdersView
                 } else {
-                    ForEach(filteredOrders.prefix(3), id: \.id) { order in
+                    ForEach(Array(filteredOrders.prefix(3).enumerated()), id: \.element.id) { index, order in
                         Button(action: {
                             selectedOrder = order
                             withAnimation(.easeInOut(duration: 0.3)) {
@@ -404,11 +472,15 @@ struct DashboardView: View {
                             PharmacyOrderCard(order: order)
                         }
                         .buttonStyle(PlainButtonStyle())
+                        .accessibilityLabel("Order \(index + 1): Status \(order.status)")
+                        .accessibilityHint("Double tap to view order details and tracking")
+                        .accessibilityAddTraits(.isButton)
                     }
                 }
             }
         }
         .padding(.horizontal, 20)
+        .accessibilityElement(children: .contain)
     }
     
     private var loadingView: some View {
@@ -424,6 +496,9 @@ struct DashboardView: View {
         .padding(.vertical, 40)
         .background(Color.white)
         .cornerRadius(12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Loading orders")
+        .accessibilityValue("Please wait while orders are being loaded")
     }
     
     private var emptyOrdersView: some View {
@@ -437,6 +512,7 @@ struct DashboardView: View {
                     .font(.system(size: 24))
                     .foregroundColor(.gray)
             }
+            .accessibilityHidden(true)
             
             Text("No current orders")
                 .font(.system(size: 16, weight: .medium))
@@ -450,6 +526,9 @@ struct DashboardView: View {
         .padding(.vertical, 40)
         .background(Color.white)
         .cornerRadius(12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("No current orders")
+        .accessibilityHint("Place your first pharmacy order using the pharmacy button above")
     }
     
     private var orderTrackingOverlay: some View {
@@ -464,9 +543,10 @@ struct DashboardView: View {
                     }
                 )
                 .transition(.move(edge: .trailing))
+                .accessibilityLabel("Order tracking details")
+                .accessibilityHint("Currently viewing detailed tracking information for your pharmacy order")
             }
         }
-        
     }
     
     private var patientId: String {
@@ -512,6 +592,14 @@ struct DashboardView: View {
                     let response = try JSONDecoder().decode(AppointmentsResponse.self, from: data)
                     self.appointments = response.appointments
                     
+                    // Announce appointment updates to VoiceOver users
+                    if !response.appointments.isEmpty {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            UIAccessibility.post(notification: .announcement,
+                                               argument: "Appointments loaded. \(response.appointments.count) appointments found.")
+                        }
+                    }
+                    
                 } catch {
                     print("Decoding error: \(error)")
                     alertMessage = "Failed to parse appointments data"
@@ -521,8 +609,6 @@ struct DashboardView: View {
         }.resume()
     }
 
-    
-    
     private func fetchPharmacyOrders() {
         guard !patientId.isEmpty else {
             alertMessage = "Patient ID not found. Please log in again."
@@ -562,9 +648,21 @@ struct DashboardView: View {
                     let response = try JSONDecoder().decode(PharmacyOrdersResponse.self, from: data)
                     self.currentOrders = response.pharmacyorders
                     
+                    // Announce order updates to VoiceOver users
+                    let activeOrders = response.pharmacyorders.filter {
+                        $0.status == "Pending" || $0.status == "Processing" || $0.status == "Ready"
+                    }
+                    
+                    if !activeOrders.isEmpty {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            UIAccessibility.post(notification: .announcement,
+                                               argument: "Orders loaded. \(activeOrders.count) active orders found.")
+                        }
+                    }
+                    
                 } catch {
                     print("Decoding error: \(error)")
-                    alertMessage = "Failed to parse appointments data"
+                    alertMessage = "Failed to parse orders data"
                     showAlert = true
                 }
             }
@@ -588,6 +686,7 @@ struct ServiceIconView: View {
                     .font(.system(size: 24))
                     .foregroundColor(color)
             }
+            .accessibilityHidden(true)
             
             Text(title)
                 .font(.system(size: 12))
@@ -595,9 +694,7 @@ struct ServiceIconView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
     }
 }
-
-//#Preview {
-//    DashboardView(onLogout: {})
-//}

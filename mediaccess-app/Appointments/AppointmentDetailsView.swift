@@ -67,7 +67,6 @@ struct AppointmentDetailsView: View {
         }
     }
     
-    // MARK: - Header View
     private var headerView: some View {
         HStack {
             Button(action: onBackTapped) {
@@ -111,7 +110,6 @@ struct AppointmentDetailsView: View {
         .background(Color(.systemGroupedBackground))
     }
     
-    // MARK: - Appointment Overview Card
     private var appointmentOverviewCard: some View {
         VStack(spacing: 16) {
             HStack(spacing: 12) {
@@ -165,8 +163,7 @@ struct AppointmentDetailsView: View {
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
-    
-    // MARK: - Patient Information Card
+
     private var patientInformationCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Patient Information")
@@ -235,7 +232,6 @@ struct AppointmentDetailsView: View {
         }
     }
     
-    // MARK: - Appointment Details Card
     private var appointmentDetailsCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Appointment Details")
@@ -304,7 +300,6 @@ struct AppointmentDetailsView: View {
         }
     }
     
-    // MARK: - Status Card
     private var statusCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Status & Timeline")
@@ -492,17 +487,14 @@ struct AppointmentDetailsView: View {
         }
     }
     
-    // MARK: - EventKit Calendar Integration
     private func addToCalendar() {
         let eventStore = EKEventStore()
         
-        // Request calendar access
         eventStore.requestAccess(to: .event) { granted, error in
             DispatchQueue.main.async {
                 if granted && error == nil {
                     self.createCalendarEvent(eventStore: eventStore)
                 } else {
-                    // Handle permission denied or error
                     self.displayErrorAlert(message: error?.localizedDescription ?? "Calendar access denied")
                 }
             }
@@ -512,7 +504,6 @@ struct AppointmentDetailsView: View {
     private func createCalendarEvent(eventStore: EKEventStore) {
         let event = EKEvent(eventStore: eventStore)
         
-        // Set event details
         event.title = "\(appointment.title) - \(appointment.doctorName)"
         event.notes = """
         Patient: \(appointment.patientName)
@@ -523,12 +514,11 @@ struct AppointmentDetailsView: View {
         Status: \(appointment.status.capitalized)
         """
         
-        // Parse date and time
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd" // Adjust based on your date format
+        dateFormatter.dateFormat = "yyyy-MM-dd"
         
         let timeFormatter = DateFormatter()
-        timeFormatter.dateFormat = "HH:mm" // Adjust based on your time format
+        timeFormatter.dateFormat = "HH:mm" 
         
         guard let appointmentDate = dateFormatter.date(from: appointment.appointmentDate),
               let appointmentTime = timeFormatter.date(from: appointment.appointmentTime) else {
@@ -554,20 +544,13 @@ struct AppointmentDetailsView: View {
         }
         
         event.startDate = startDate
-        // Assume 1-hour appointment duration (adjust as needed)
-        event.endDate = startDate.addingTimeInterval(3600) // 1 hour = 3600 seconds
+        event.endDate = startDate.addingTimeInterval(3600)
         
-        // Set calendar (use default calendar)
         event.calendar = eventStore.defaultCalendarForNewEvents
         
-        // Add location if you have clinic/hospital address
-        // event.location = "Your Clinic Address"
-        
-        // Set alarm/reminder (15 minutes before)
-        let alarm = EKAlarm(relativeOffset: -15 * 60) // 15 minutes before
+        let alarm = EKAlarm(relativeOffset: -15 * 60) 
         event.addAlarm(alarm)
         
-        // Save the event
         do {
             try eventStore.save(event, span: .thisEvent)
             displaySuccessAlert()
@@ -585,17 +568,12 @@ struct AppointmentDetailsView: View {
         showErrorAlert = true
     }
     
-    // MARK: - Other Action Functions
     private func rescheduleAppointment() {
-        // Implement appointment rescheduling here
         print("Rescheduling appointment: \(appointment.id)")
-        // Navigate to reschedule view or show date/time picker
     }
     
     private func cancelAppointment() {
-        // Implement appointment cancellation here
         print("Cancelling appointment: \(appointment.id)")
-        // Make API call to cancel appointment
     }
     
     private func shareAppointment() {

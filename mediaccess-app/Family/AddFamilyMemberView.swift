@@ -437,7 +437,7 @@ struct AddFamilyMemberView: View {
                                 UserDefaults.standard.set(updatedData, forKey: "dependents")
                             }
                             
-                            self.alertMessage = "🎉 Dependent successfully added!"
+                            self.alertMessage = "Dependent successfully added!"
                             self.showAlert = true
                         } else {
                             self.alertMessage = "Failed to add dependent"

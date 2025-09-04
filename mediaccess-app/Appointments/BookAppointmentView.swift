@@ -894,7 +894,7 @@ struct BookAppointmentView: View {
                     
                     if let httpResponse = response as? HTTPURLResponse {
                         if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-                            alertMessage = "🎉 Appointment successfully booked!\n\nPatient: \(patientName)\nDoctor: \(doctor.name)\nSpecialty: \(doctor.specialty)\nDate: \(selectedDate)\nTime: \(selectedTime)\n\nYou will receive a confirmation shortly."
+                            alertMessage = "Appointment successfully booked!\n\nPatient: \(patientName)\nDoctor: \(doctor.name)\nSpecialty: \(doctor.specialty)\nDate: \(selectedDate)\nTime: \(selectedTime)\n\nYou will receive a confirmation shortly."
                             showAlert = true
                             
                             // Save updated contact details
