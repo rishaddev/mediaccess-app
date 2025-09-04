@@ -6,15 +6,47 @@ struct FamilyMemberDetailsView: View {
     @State private var selectedTab = 0
     
     @State private var isLoadingData = true
-    @State private var appointments: [MemberAppointment] = []
+    @State private var appointments: [AppointmentDetail] = []
+    @State private var showAppointmentDetails = false
+    @State private var selectedAppointment: AppointmentDetail?
+    
     @State private var homeVisits: [MemberHomeVisit] = []
     @State private var pharmacyOrders: [MemberPharmacyOrder] = []
     @State private var showAlert = false
     @State private var alertMessage = ""
     
-    static var memberDataCache: [String: (appointments: [MemberAppointment], homeVisits: [MemberHomeVisit], pharmacyOrders: [MemberPharmacyOrder])] = [:]
+    static var memberDataCache: [String: (appointments: [AppointmentDetail], homeVisits: [MemberHomeVisit], pharmacyOrders: [MemberPharmacyOrder])] = [:]
     
     var body: some View {
+        ZStack {
+            mainContent
+            
+            if showAppointmentDetails, let appointment = selectedAppointment {
+                AppointmentDetailsView(
+                    appointment: appointment,
+                    onBackTapped: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            showAppointmentDetails = false
+                        }
+                    }
+                )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing),
+                    removal: .move(edge: .trailing)
+                ))
+            }
+        }
+        .onAppear {
+            fetchMemberData()
+        }
+        .alert("Error", isPresented: $showAlert) {
+            Button("OK") { }
+        } message: {
+            Text(alertMessage)
+        }
+    }
+    
+    private var mainContent: some View {
         VStack(spacing: 0) {
             HStack {
                 Button(action: onBackTapped) {
@@ -123,10 +155,25 @@ struct FamilyMemberDetailsView: View {
                                 appointments: appointments,
                                 homeVisits: homeVisits,
                                 pharmacyOrders: pharmacyOrders,
-                                isLoading: isLoadingData
+                                isLoading: isLoadingData,
+                                onAppointmentTapped: { appointment in
+                                    selectedAppointment = appointment
+                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                        showAppointmentDetails = true
+                                    }
+                                }
                             )
                         case 1:
-                            AppointmentsTabContent(appointments: appointments, isLoading: isLoadingData)
+                            AppointmentsTabContent(
+                                appointments: appointments,
+                                isLoading: isLoadingData,
+                                onAppointmentTapped: { appointment in
+                                    selectedAppointment = appointment
+                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                        showAppointmentDetails = true
+                                    }
+                                }
+                            )
                         case 2:
                             HomeVisitsTabContent(homeVisits: homeVisits, isLoading: isLoadingData)
                         case 3:
@@ -136,7 +183,13 @@ struct FamilyMemberDetailsView: View {
                                 appointments: appointments,
                                 homeVisits: homeVisits,
                                 pharmacyOrders: pharmacyOrders,
-                                isLoading: isLoadingData
+                                isLoading: isLoadingData,
+                                onAppointmentTapped: { appointment in
+                                    selectedAppointment = appointment
+                                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                                        showAppointmentDetails = true
+                                    }
+                                }
                             )
                         }
                     }
@@ -147,14 +200,7 @@ struct FamilyMemberDetailsView: View {
             }
         }
         .background(Color(.systemGroupedBackground))
-        .onAppear {
-            fetchMemberData()
-        }
-        .alert("Error", isPresented: $showAlert) {
-            Button("OK") { }
-        } message: {
-            Text(alertMessage)
-        }
+        .opacity(showAppointmentDetails ? 0 : 1)
     }
     
     private func fetchMemberData() {
@@ -174,7 +220,7 @@ struct FamilyMemberDetailsView: View {
         
         isLoadingData = true
         let group = DispatchGroup()
-        var fetchedAppointments: [MemberAppointment] = []
+        var fetchedAppointments: [AppointmentDetail] = []
         var fetchedHomeVisits: [MemberHomeVisit] = []
         var fetchedPharmacyOrders: [MemberPharmacyOrder] = []
         
@@ -207,40 +253,71 @@ struct FamilyMemberDetailsView: View {
             }
             
             do {
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    if let appointmentsArray = json["appointments"] as? [[String: Any]] {
-                        fetchedAppointments = appointmentsArray.compactMap { appointmentDict in
-                            // Updated parsing to match actual API response structure
-                            guard let id = appointmentDict["id"] as? String else {
-                                return nil
-                            }
-                            
-                            // Use the actual field names from the API response
-                            let patientName = appointmentDict["patientName"] as? String ?? "Unknown Patient"
-                            let doctorName = appointmentDict["doctorName"] as? String ?? "Unknown Doctor"
-                            let speciality = appointmentDict["speciality"] as? String ?? ""
-                            let appointmentDate = appointmentDict["appointmentDate"] as? String ?? ""
-                            let appointmentTime = appointmentDict["appointmentTime"] as? String ?? ""
-                            
-                            // Create a meaningful title
-                            let title = !speciality.isEmpty ? "\(speciality) Consultation" : "Medical Appointment"
-                            
-                            // Format the date string (combine date and time if available)
-                            let dateString = !appointmentTime.isEmpty ? "\(appointmentDate) \(appointmentTime)" : appointmentDate
-                            
-                            return MemberAppointment(
-                                id: UUID(),
-                                title: title,
-                                doctor: doctorName,
-                                date: dateString
-                            )
-                        }
-                    } else if json["appointments"] is NSNull || json["appointments"] == nil {
-                        fetchedAppointments = []
-                    }
+                struct APIAppointmentResponse: Codable {
+                    let appointments: [APIAppointmentDetail]
+                }
+                
+                struct APIAppointmentDetail: Codable {
+                    let id: String
+                    let appointmentDate: String
+                    let appointmentTime: String
+                    let contactNumber: String
+                    let createdDate: String
+                    let createdTime: String
+                    let dob: String
+                    let doctorName: String
+                    let patientId: String
+                    let patientName: String
+                    let speciality: String
+                    let status: String
+                }
+                
+                let response = try JSONDecoder().decode(APIAppointmentResponse.self, from: data)
+                fetchedAppointments = response.appointments.map { apiAppointment in
+                    AppointmentDetail(
+                        appointmentDate: apiAppointment.appointmentDate,
+                        appointmentTime: apiAppointment.appointmentTime,
+                        contactNumber: apiAppointment.contactNumber,
+                        createdDate: apiAppointment.createdDate,
+                        createdTime: apiAppointment.createdTime,
+                        dob: apiAppointment.dob,
+                        doctorName: apiAppointment.doctorName,
+                        patientId: apiAppointment.patientId,
+                        patientName: apiAppointment.patientName,
+                        speciality: apiAppointment.speciality,
+                        status: apiAppointment.status
+                    )
                 }
             } catch {
                 print("Error parsing appointments: \(error)")
+                // Fallback to manual parsing
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let appointmentsArray = json["appointments"] as? [[String: Any]] {
+                        fetchedAppointments = appointmentsArray.compactMap { appointmentDict in
+                            guard let patientName = appointmentDict["patientName"] as? String,
+                                  let doctorName = appointmentDict["doctorName"] as? String,
+                                  let speciality = appointmentDict["speciality"] as? String,
+                                  let appointmentDate = appointmentDict["appointmentDate"] as? String,
+                                  let appointmentTime = appointmentDict["appointmentTime"] as? String else {
+                                return nil
+                            }
+                            
+                            return AppointmentDetail(
+                                appointmentDate: appointmentDate,
+                                appointmentTime: appointmentTime,
+                                contactNumber: appointmentDict["contactNumber"] as? String ?? "",
+                                createdDate: appointmentDict["createdDate"] as? String ?? "",
+                                createdTime: appointmentDict["createdTime"] as? String ?? "",
+                                dob: appointmentDict["dob"] as? String ?? "",
+                                doctorName: doctorName,
+                                patientId: appointmentDict["patientId"] as? String ?? "",
+                                patientName: patientName,
+                                speciality: speciality,
+                                status: appointmentDict["status"] as? String ?? ""
+                            )
+                        }
+                    }
+                }
             }
         }.resume()
         
@@ -270,7 +347,6 @@ struct FamilyMemberDetailsView: View {
             
             do {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    // Updated to check for "homevisits" (lowercase) as shown in the API response
                     if let visitsArray = json["homevisits"] as? [[String: Any]] ?? json["homeVisits"] as? [[String: Any]] ?? json["visits"] as? [[String: Any]] {
                         fetchedHomeVisits = visitsArray.compactMap { visitDict in
                             guard let id = visitDict["id"] as? String,
@@ -314,7 +390,6 @@ struct FamilyMemberDetailsView: View {
             
             do {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    // Updated to check for "pharmacyorders" (lowercase) as shown in the API response
                     if let ordersArray = json["pharmacyorders"] as? [[String: Any]] ?? json["pharmacyOrders"] as? [[String: Any]] ?? json["orders"] as? [[String: Any]] {
                         fetchedPharmacyOrders = ordersArray.compactMap { orderDict in
                             guard let id = orderDict["id"] as? String,
@@ -365,12 +440,12 @@ struct TabButton: View {
     }
 }
 
-
 struct OverviewTabContent: View {
-    let appointments: [MemberAppointment]
+    let appointments: [AppointmentDetail]
     let homeVisits: [MemberHomeVisit]
     let pharmacyOrders: [MemberPharmacyOrder]
     let isLoading: Bool
+    let onAppointmentTapped: (AppointmentDetail) -> Void
     
     var body: some View {
         VStack(spacing: 24) {
@@ -396,13 +471,18 @@ struct OverviewTabContent: View {
                 } else {
                     VStack(spacing: 12) {
                         ForEach(appointments.prefix(3), id: \.id) { appointment in
-                            AppointmentRow(
-                                icon: "calendar",
-                                title: appointment.title,
-                                subtitle: appointment.doctor,
-                                date: appointment.date,
-                                isUpcoming: false
-                            )
+                            Button(action: {
+                                onAppointmentTapped(appointment)
+                            }) {
+                                AppointmentRow(
+                                    icon: "calendar",
+                                    title: appointment.speciality,
+                                    subtitle: appointment.doctorName,
+                                    date: appointment.appointmentDate,
+                                    isUpcoming: false
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                 }
@@ -459,8 +539,9 @@ struct OverviewTabContent: View {
 }
 
 struct AppointmentsTabContent: View {
-    let appointments: [MemberAppointment]
+    let appointments: [AppointmentDetail]
     let isLoading: Bool
+    let onAppointmentTapped: (AppointmentDetail) -> Void
     
     var body: some View {
         SectionCard(title: "All Appointments") {
@@ -480,13 +561,18 @@ struct AppointmentsTabContent: View {
             } else {
                 VStack(spacing: 12) {
                     ForEach(appointments, id: \.id) { appointment in
-                        AppointmentRow(
-                            icon: "calendar",
-                            title: appointment.title,
-                            subtitle: appointment.doctor,
-                            date: appointment.date,
-                            isUpcoming: false
-                        )
+                        Button(action: {
+                            onAppointmentTapped(appointment)
+                        }) {
+                            AppointmentRow(
+                                icon: "calendar",
+                                title: appointment.speciality,
+                                subtitle: appointment.doctorName,
+                                date: appointment.appointmentDate,
+                                isUpcoming: false
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
             }
@@ -559,7 +645,6 @@ struct PharmacyTabContent: View {
         }
     }
 }
-
 
 struct SectionCard<Content: View>: View {
     let title: String
@@ -704,13 +789,6 @@ struct StatCard: View {
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
-}
-
-struct MemberAppointment: Identifiable {
-    let id: UUID
-    let title: String
-    let doctor: String
-    let date: String
 }
 
 struct MemberHomeVisit: Identifiable {

@@ -19,12 +19,12 @@ struct FamilyView: View {
     @State private var showAppointmentDetails = false
     @State private var showLabReportDetails = false
     @State private var showMemberDetails = false
-    @State private var selectedAppointment: PastAppointment?
+    @State private var selectedAppointment: AppointmentDetail?
     @State private var selectedLabReport: LabReport?
     @State private var selectedMember: FamilyMember?
     
     @State private var familyMembers: [FamilyMember] = []
-    @State private var familyAppointments: [PastAppointment] = []
+    @State private var familyAppointments: [AppointmentDetail] = []
     @State private var isLoadingFamilyAppointments = false
     
     var body: some View {
@@ -39,7 +39,7 @@ struct FamilyView: View {
         .onChange(of: showAddMember) { _, isShowing in
             if !isShowing {
                 loadFamilyMembers()
-                fetchFamilyAppointments() // Refresh appointments when a new member is added
+                fetchFamilyAppointments()
             }
         }
     }
@@ -381,7 +381,7 @@ struct FamilyView: View {
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
     
-    private func modernPastAppointmentCard(_ appointment: PastAppointment) -> some View {
+    private func modernPastAppointmentCard(_ appointment: AppointmentDetail) -> some View {
         HStack(spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
@@ -400,20 +400,20 @@ struct FamilyView: View {
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                if let memberName = appointment.memberName, !memberName.isEmpty {
-                    Text(memberName)
+                if !appointment.patientName.isEmpty {
+                    Text(appointment.patientName)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.blue)
                         .padding(.bottom, 3)
                 }
                 
                 
-                Text(appointment.title)
+                Text(appointment.speciality)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.black)
                 //                    .lineLimit(1)
                 
-                Text(appointment.doctor)
+                Text(appointment.doctorName)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.gray)
                     .lineLimit(1)
@@ -423,14 +423,14 @@ struct FamilyView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "calendar")
                             .font(.system(size: 10))
-                        Text(appointment.date)
+                        Text(appointment.appointmentDate)
                             .font(.system(size: 12))
                     }
                     
                     HStack(spacing: 4) {
                         Image(systemName: "clock")
                             .font(.system(size: 10))
-                        Text(appointment.date)
+                        Text(appointment.appointmentTime)
                             .font(.system(size: 12))
                     }
                 }
@@ -526,78 +526,90 @@ struct FamilyView: View {
     }
     
     private func fetchFamilyAppointments() {
-        isLoadingFamilyAppointments = true
-        familyAppointments = []
-        
-        // Only get dependents (excluding the logged-in user)
-        guard let dependentsData = UserDefaults.standard.data(forKey: "dependents"),
-              let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData),
-              !dependents.isEmpty else {
-            isLoadingFamilyAppointments = false
-            return
+    isLoadingFamilyAppointments = true
+    familyAppointments = []
+    
+    // Only get dependents (excluding the logged-in user)
+    guard let dependentsData = UserDefaults.standard.data(forKey: "dependents"),
+          let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData),
+          !dependents.isEmpty else {
+        isLoadingFamilyAppointments = false
+        return
+    }
+    
+    let group = DispatchGroup()
+    var allAppointments: [AppointmentDetail] = []
+    
+    // Create a mapping of dependent IDs to names for reference
+    let dependentMap = Dictionary(uniqueKeysWithValues: dependents.map { ($0.id, $0.name) })
+    
+    for dependent in dependents {
+        group.enter()
+        let urlString = "https://mediaccess.vercel.app/api/appointment/all?patientId=\(dependent.id)"
+        guard let url = URL(string: urlString) else {
+            group.leave()
+            continue
         }
         
-        let group = DispatchGroup()
-        var allAppointments: [PastAppointment] = []
-        
-        // Create a mapping of dependent IDs to names for reference
-        let dependentMap = Dictionary(uniqueKeysWithValues: dependents.map { ($0.id, $0.name) })
-        
-        for dependent in dependents {
-            group.enter()
-            let urlString = "https://mediaccess.vercel.app/api/appointment/all?patientId=\(dependent.id)"
-            guard let url = URL(string: urlString) else {
-                group.leave()
-                continue
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            defer { group.leave() }
+            
+            if let error = error {
+                print("Error fetching appointments for \(dependent.name): \(error.localizedDescription)")
+                return
             }
             
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                defer { group.leave() }
-                
-                if let error = error {
-                    print("Error fetching appointments for \(dependent.name): \(error.localizedDescription)")
-                    return
-                }
-                
-                if let data = data {
-                    do {
-                        struct AppointmentDetail: Codable, Identifiable {
-                            let id: String
-                            let doctorName: String
-                            let speciality: String
-                            let appointmentDate: String
-                            let appointmentTime: String
-                            let patientName: String
-                            // Add other fields as needed
-                        }
-                        struct AppointmentsResponse: Codable {
-                            let appointments: [AppointmentDetail]
-                        }
-                        
-                        let response = try JSONDecoder().decode(AppointmentsResponse.self, from: data)
-                        let mapped = response.appointments.map {
-                            PastAppointment(
-                                title: $0.speciality,
-                                doctor: $0.doctorName,
-                                date: $0.appointmentDate,
-                                memberName: dependent.name
-                            )
-                        }
-                        allAppointments.append(contentsOf: mapped)
-                    } catch {
-                        print("Error decoding appointments for \(dependent.name): \(error.localizedDescription)")
+            if let data = data {
+                do {
+                    struct APIAppointmentDetail: Codable {
+                        let appointmentDate: String
+                        let appointmentTime: String
+                        let contactNumber: String
+                        let createdDate: String
+                        let createdTime: String
+                        let dob: String
+                        let doctorName: String
+                        let patientId: String
+                        let patientName: String
+                        let speciality: String
+                        let status: String
                     }
+                    
+                    struct AppointmentsResponse: Codable {
+                        let appointments: [APIAppointmentDetail]
+                    }
+                    
+                    let response = try JSONDecoder().decode(AppointmentsResponse.self, from: data)
+                    let mapped = response.appointments.map { apiAppointment in
+                        AppointmentDetail(
+                            appointmentDate: apiAppointment.appointmentDate,
+                            appointmentTime: apiAppointment.appointmentTime,
+                            contactNumber: apiAppointment.contactNumber,
+                            createdDate: apiAppointment.createdDate,
+                            createdTime: apiAppointment.createdTime,
+                            dob: apiAppointment.dob,
+                            doctorName: apiAppointment.doctorName,
+                            patientId: apiAppointment.patientId,
+                            patientName: apiAppointment.patientName,
+                            speciality: apiAppointment.speciality,
+                            status: apiAppointment.status
+                        )
+                    }
+                    allAppointments.append(contentsOf: mapped)
+                } catch {
+                    print("Error decoding appointments for \(dependent.name): \(error.localizedDescription)")
                 }
-            }.resume()
-        }
-        
-        group.notify(queue: .main) {
-            self.familyAppointments = allAppointments.sorted { appointment1, appointment2 in
-                return appointment1.date > appointment2.date
             }
-            self.isLoadingFamilyAppointments = false
-        }
+        }.resume()
     }
+    
+    group.notify(queue: .main) {
+        self.familyAppointments = allAppointments.sorted { appointment1, appointment2 in
+            return appointment1.appointmentDate > appointment2.appointmentDate
+        }
+        self.isLoadingFamilyAppointments = false
+    }
+}
     
     private func formatAppointmentDate(_ dateString: String, time timeString: String) -> String {
         let dateFormatter = DateFormatter()
@@ -643,9 +655,9 @@ struct FamilyView: View {
                 ))
             }
             
-            if showAppointmentDetails, let appointment = selectedAppointment {
-                AppointmentDetailView(
-                    appointment: appointment,
+            if showAppointmentDetails, let appointmentDetail = selectedAppointment {
+                AppointmentDetailsView(
+                    appointment: appointmentDetail,
                     onBackTapped: {
                         withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                             showAppointmentDetails = false
