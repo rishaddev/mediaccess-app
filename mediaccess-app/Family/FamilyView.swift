@@ -26,6 +26,7 @@ struct FamilyView: View {
     @State private var familyMembers: [FamilyMember] = []
     @State private var familyAppointments: [AppointmentDetail] = []
     @State private var isLoadingFamilyAppointments = false
+    @State private var showingNotifications = false
     
     var body: some View {
         ZStack {
@@ -42,6 +43,9 @@ struct FamilyView: View {
                 fetchFamilyAppointments()
             }
         }
+        .fullScreenCover(isPresented: $showingNotifications) {
+                    NotificationsView()
+                }
     }
     
     private var mainContent: some View {
@@ -61,7 +65,9 @@ struct FamilyView: View {
             
             Spacer()
             
-            Button(action: {}) {
+            Button(action: {
+                showingNotifications = true
+            }) {
                 ZStack {
                     Circle()
                         .fill(Color.white)

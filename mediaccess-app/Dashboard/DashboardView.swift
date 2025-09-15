@@ -7,6 +7,7 @@ struct DashboardView: View {
     @State private var showBookHomeVisit = false
     @State private var showServices = false
     @State private var showPlaceNewOrder = false
+    @State private var showingNotifications = false
     
     @State private var showOrderTracking = false
     @State private var selectedOrder: PharmacyOrder?
@@ -95,6 +96,9 @@ struct DashboardView: View {
         .fullScreenCover(isPresented: $showPlaceNewOrder) {
             PlaceNewOrderView()
         }
+        .fullScreenCover(isPresented: $showingNotifications) {
+                    NotificationsView()
+                }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Medical Dashboard")
     }
@@ -167,7 +171,9 @@ struct DashboardView: View {
             
             Spacer()
             
-            Button(action: {}) {
+            Button(action: {
+                showingNotifications = true
+            }) {
                 Image(systemName: "bell")
                     .font(.system(size: 14))
                     .foregroundColor(.black)

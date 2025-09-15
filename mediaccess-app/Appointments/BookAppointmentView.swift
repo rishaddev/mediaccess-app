@@ -1,3 +1,4 @@
+import UserNotifications
 import SwiftUI
 import MapKit
 
@@ -69,6 +70,10 @@ struct BookAppointmentView: View {
     @State private var editableContactNumber = ""
     @State private var editableDob = ""
     
+    @State private var showingNotificationAlert = false
+    @State private var notificationMessage = ""
+    @StateObject private var notificationManager = NotificationManager.shared
+    
     let onBackTapped: () -> Void
     
     private var guardianContactNumber: String {
@@ -110,6 +115,7 @@ struct BookAppointmentView: View {
         .onAppear {
             loadPatientOptions()
             fetchDoctors()
+            notificationManager.requestPermission()
         }
         .sheet(isPresented: $showingPatientPicker) {
             patientPickerSheet
@@ -128,6 +134,11 @@ struct BookAppointmentView: View {
             }
         } message: {
             Text(alertMessage)
+        }
+        .alert("Notification Settings", isPresented: $showingNotificationAlert) {
+            Button("OK") { }
+        } message: {
+            Text(notificationMessage)
         }
     }
     
@@ -702,12 +713,12 @@ struct BookAppointmentView: View {
     
     private var isBookingEnabled: Bool {
         return selectedPatient != nil &&
-               selectedDoctor != nil &&
-               !selectedDate.isEmpty &&
-               !selectedTime.isEmpty &&
-               !editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               !editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               !editableDob.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        selectedDoctor != nil &&
+        !selectedDate.isEmpty &&
+        !selectedTime.isEmpty &&
+        !editablePatientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !editableDob.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     private func loadPatientOptions() {
@@ -753,8 +764,8 @@ struct BookAppointmentView: View {
         if email.contains("@") {
             let username = String(email.split(separator: "@").first ?? "User")
             return username.replacingOccurrences(of: ".", with: " ")
-                          .replacingOccurrences(of: "_", with: " ")
-                          .capitalized
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
         }
         return email.capitalized
     }
@@ -846,6 +857,7 @@ struct BookAppointmentView: View {
         let contactNumber = editableContactNumber.trimmingCharacters(in: .whitespacesAndNewlines)
         let dob = editableDob.trimmingCharacters(in: .whitespacesAndNewlines)
         
+        // Validation checks
         if patientName.isEmpty {
             alertMessage = "Please enter patient's full name"
             showAlert = true
@@ -894,7 +906,16 @@ struct BookAppointmentView: View {
                     
                     if let httpResponse = response as? HTTPURLResponse {
                         if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-                            alertMessage = "Appointment successfully booked!\n\nPatient: \(patientName)\nDoctor: \(doctor.name)\nSpecialty: \(doctor.specialty)\nDate: \(selectedDate)\nTime: \(selectedTime)\n\nYou will receive a confirmation shortly."
+                            // Booking successful - now schedule notifications
+                            scheduleAppointmentNotifications(
+                                patientName: patientName,
+                                doctorName: doctor.name,
+                                specialty: doctor.specialty,
+                                appointmentDate: selectedDate,
+                                appointmentTime: selectedTime
+                            )
+                            
+                            alertMessage = "Appointment successfully booked!\n\nPatient: \(patientName)\nDoctor: \(doctor.name)\nSpecialty: \(doctor.specialty)\nDate: \(selectedDate)\nTime: \(selectedTime)\n\nYou will receive reminder notifications before your appointment."
                             showAlert = true
                             
                             // Save updated contact details
@@ -920,6 +941,31 @@ struct BookAppointmentView: View {
             isBooking = false
             alertMessage = "Failed to prepare appointment data: \(error.localizedDescription)"
             showAlert = true
+        }
+    }
+    
+    private func scheduleAppointmentNotifications(
+        patientName: String,
+        doctorName: String,
+        specialty: String,
+        appointmentDate: String,
+        appointmentTime: String
+    ) {
+        notificationManager.scheduleAppointmentReminder(
+            patientName: patientName,
+            doctorName: doctorName,
+            specialty: specialty,
+            appointmentDate: appointmentDate,
+            appointmentTime: appointmentTime
+        ) { success in
+            DispatchQueue.main.async {
+                if success {
+                    print("Appointment reminders scheduled successfully")
+                } else {
+                    notificationMessage = "Appointment booked successfully, but reminders could not be scheduled. Please check your notification settings."
+                    showingNotificationAlert = true
+                }
+            }
         }
     }
 }

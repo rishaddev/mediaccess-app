@@ -58,6 +58,7 @@ struct AppointmentsView: View {
     
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var showingNotifications = false
     
     
     let onBookAppointment: () -> Void
@@ -74,6 +75,9 @@ struct AppointmentsView: View {
             mainContent
             detailsOverlays
         }
+        .fullScreenCover(isPresented: $showingNotifications) {
+                    NotificationsView()
+                }
     }
     
     private var mainContent: some View {
@@ -93,7 +97,9 @@ struct AppointmentsView: View {
             
             Spacer()
             
-            Button(action: {}) {
+            Button(action: {
+                showingNotifications = true
+            }) {
                 Image(systemName: "bell")
                     .font(.system(size: 14))
                     .foregroundColor(.black)

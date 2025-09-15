@@ -80,162 +80,302 @@ struct ProfileView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            headerView
             
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
+            ScrollView {
+                VStack(spacing: 20) {
+                    profileHeaderSection
+                    personalInfoSection
+                    medicalInfoSection
+                    emergencyContactSection
+                    Spacer(minLength: 100)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+            }
+        }
+        .background(Color(.systemGroupedBackground))
+        .fullScreenCover(isPresented: $showingSettings) {
+            SettingsView(onLogout: onLogout)
+        }
+    }
+    
+    private var headerView: some View {
+        HStack {
+            Button(action: {
+                dismiss()
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 40, height: 40)
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    
                     Image(systemName: "arrow.left")
-                        .font(.title2)
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.black)
                 }
+            }
+            
+            Spacer()
+            
+            Text("Profile")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.black)
+            
+            Spacer()
+            
+            Button(action: {
+                showingSettings = true
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 40, height: 40)
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 5)
+        .background(Color(.systemGroupedBackground))
+    }
+    
+    private var profileHeaderSection: some View {
+        VStack(spacing: 16) {
+            // Profile Avatar
+            ZStack {
+                Circle()
+                    .fill(LinearGradient(
+                        gradient: Gradient(colors: [Color.blue.opacity(0.8), Color.blue.opacity(0.6)]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .frame(width: 100, height: 100)
+                    .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
                 
-                Spacer()
+                Text(getInitials(from: name))
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            
+            VStack(spacing: 8) {
+                Text(name.isEmpty ? "No Name" : name)
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.black)
                 
-                Text("Profile")
+                HStack(spacing: 4) {
+                    Image(systemName: "person.text.rectangle")
+                        .font(.system(size: 12))
+                        .foregroundColor(.blue)
+                    Text("ID: \(patientId.isEmpty ? "N/A" : patientId)")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.gray)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(8)
+            }
+        }
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
+    }
+    
+    private var personalInfoSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.green.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.green)
+                }
+                
+                Text("Personal Information")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.black)
                 
                 Spacer()
-                
-                Button(action: {
-                    showingSettings = true
-                }) {
-                    Image(systemName: "gearshape")
-                        .font(.title2)
-                        .foregroundColor(.black)
-                }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
             
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Profile Image and Name
-                    VStack(spacing: 16) {
-                        // Show initials instead of image
-                        ZStack {
-                            Circle()
-                                .fill(Color.blue.opacity(0.1))
-                                .frame(width: 120, height: 120)
-                            
-                            Text(getInitials(from: name))
-                                .font(.system(size: 36, weight: .semibold))
-                                .foregroundColor(.blue)
-                        }
-                        
-                        VStack(spacing: 4) {
-                            Text(name.isEmpty ? "No Name" : name)
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
-                            
-                            Text("Patient ID: \(patientId.isEmpty ? "N/A" : patientId)")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.top, 30)
-                    
-                    // Personal Information Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Personal Information")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.black)
-                        
-                        EditableProfileInfoRow(
-                            title: "Name",
-                            value: $name,
-                            isEditing: $isEditingName
-                        )
-                        EditableProfileInfoRow(
-                            title: "Email",
-                            value: $email,
-                            isEditing: $isEditingEmail
-                        )
-                        EditableProfileInfoRow(
-                            title: "Contact Number",
-                            value: $contactNumber,
-                            isEditing: $isEditingPhone
-                        )
-                        EditableProfileInfoRow(
-                            title: "Address",
-                            value: $address,
-                            isEditing: $isEditingAddress
-                        )
-                        EditableProfileInfoRow(
-                            title: "NIC Number",
-                            value: $nicNo,
-                            isEditing: $isEditingNicNo
-                        )
-                        EditableProfileInfoRow(
-                            title: "Date of Birth",
-                            value: $dob,
-                            isEditing: $isEditingDOB
-                        )
-                        EditableProfileInfoRow(
-                            title: "Gender",
-                            value: $gender,
-                            isEditing: $isEditingGender
-                        )
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Medical Information Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Medical Information")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.black)
-                        
-                        EditableProfileInfoRow(
-                            title: "Blood Type",
-                            value: $bloodType,
-                            isEditing: $isEditingBloodType
-                        )
-                        EditableProfileInfoRow(
-                            title: "Allergies",
-                            value: $allergies,
-                            isEditing: $isEditingAllergies
-                        )
-                        EditableProfileInfoRow(
-                            title: "Medications",
-                            value: $medications,
-                            isEditing: $isEditingMedications
-                        )
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Emergency Contact Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Emergency Contact")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.black)
-                        
-                        EditableProfileInfoRow(
-                            title: "Name",
-                            value: $emergencyName,
-                            isEditing: $isEditingEmergencyName
-                        )
-                        EditableProfileInfoRow(
-                            title: "Phone",
-                            value: $emergencyPhone,
-                            isEditing: $isEditingEmergencyPhone
-                        )
-                        EditableProfileInfoRow(
-                            title: "Relation",
-                            value: $emergencyRelation,
-                            isEditing: $isEditingEmergencyRelation
-                        )
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    Spacer(minLength: 100)
-                }
+            VStack(spacing: 12) {
+                ModernEditableRow(
+                    title: "Full Name",
+                    value: $name,
+                    isEditing: $isEditingName,
+                    icon: "person.fill",
+                    iconColor: .blue
+                )
+                
+                ModernEditableRow(
+                    title: "Email Address",
+                    value: $email,
+                    isEditing: $isEditingEmail,
+                    icon: "envelope.fill",
+                    iconColor: .orange
+                )
+                
+                ModernEditableRow(
+                    title: "Contact Number",
+                    value: $contactNumber,
+                    isEditing: $isEditingPhone,
+                    icon: "phone.fill",
+                    iconColor: .green
+                )
+                
+                ModernEditableRow(
+                    title: "Address",
+                    value: $address,
+                    isEditing: $isEditingAddress,
+                    icon: "house.fill",
+                    iconColor: .purple
+                )
+                
+                ModernEditableRow(
+                    title: "NIC Number",
+                    value: $nicNo,
+                    isEditing: $isEditingNicNo,
+                    icon: "creditcard.fill",
+                    iconColor: .indigo
+                )
+                
+                ModernEditableRow(
+                    title: "Date of Birth",
+                    value: $dob,
+                    isEditing: $isEditingDOB,
+                    icon: "calendar",
+                    iconColor: .pink
+                )
+                
+                ModernEditableRow(
+                    title: "Gender",
+                    value: $gender,
+                    isEditing: $isEditingGender,
+                    icon: "figure.dress.line.vertical.figure",
+                    iconColor: .teal
+                )
             }
         }
+        .padding(16)
         .background(Color.white)
-        .fullScreenCover(isPresented: $showingSettings) {
-            SettingsView(onLogout: onLogout)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
+    }
+    
+    private var medicalInfoSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.red)
+                }
+                
+                Text("Medical Information")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.black)
+                
+                Spacer()
+            }
+            
+            VStack(spacing: 12) {
+                ModernEditableRow(
+                    title: "Blood Type",
+                    value: $bloodType,
+                    isEditing: $isEditingBloodType,
+                    icon: "drop.fill",
+                    iconColor: .red
+                )
+                
+                ModernEditableRow(
+                    title: "Allergies",
+                    value: $allergies,
+                    isEditing: $isEditingAllergies,
+                    icon: "exclamationmark.triangle.fill",
+                    iconColor: .orange
+                )
+                
+                ModernEditableRow(
+                    title: "Current Medications",
+                    value: $medications,
+                    isEditing: $isEditingMedications,
+                    icon: "pills.fill",
+                    iconColor: .blue
+                )
+            }
         }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
+    }
+    
+    private var emergencyContactSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.orange.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: "phone.badge.plus")
+                        .font(.system(size: 16))
+                        .foregroundColor(.orange)
+                }
+                
+                Text("Emergency Contact")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.black)
+                
+                Spacer()
+            }
+            
+            VStack(spacing: 12) {
+                ModernEditableRow(
+                    title: "Contact Name",
+                    value: $emergencyName,
+                    isEditing: $isEditingEmergencyName,
+                    icon: "person.crop.circle.fill",
+                    iconColor: .green
+                )
+                
+                ModernEditableRow(
+                    title: "Phone Number",
+                    value: $emergencyPhone,
+                    isEditing: $isEditingEmergencyPhone,
+                    icon: "phone.fill",
+                    iconColor: .blue
+                )
+                
+                ModernEditableRow(
+                    title: "Relationship",
+                    value: $emergencyRelation,
+                    isEditing: $isEditingEmergencyRelation,
+                    icon: "heart.fill",
+                    iconColor: .pink
+                )
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
     
     // Helper function to get initials from name
@@ -247,81 +387,116 @@ struct ProfileView: View {
     }
 }
 
-struct EditableProfileInfoRow: View {
+struct ModernEditableRow: View {
     let title: String
     @Binding var value: String
     @Binding var isEditing: Bool
+    let icon: String
+    let iconColor: Color
+    
     @State private var tempValue: String = ""
     @State private var isUpdating = false
     @State private var showAlert = false
     @State private var alertMessage = ""
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.black)
-            
-            HStack {
-                if isEditing {
-                    TextField("Enter \(title.lowercased())", text: $tempValue)
-                        .font(.system(size: 14))
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .onAppear {
-                            tempValue = value
-                        }
-                } else {
-                    Text(value.isEmpty ? "Not specified" : value)
-                        .font(.system(size: 14))
-                        .foregroundColor(value.isEmpty ? .gray.opacity(0.7) : .gray)
-                        .italic(value.isEmpty)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.1))
+                        .frame(width: 35, height: 35)
                     
-                    Spacer()
+                    Image(systemName: icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(iconColor)
                 }
                 
-                if isEditing {
-                    HStack(spacing: 8) {
-                        // Save button
-                        Button(action: {
-                            updatePatientDetails()
-                        }) {
-                            HStack(spacing: 4) {
-                                if isUpdating {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .green))
-                                        .scaleEffect(0.7)
-                                } else {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.green)
-                                }
-                            }
-                        }
-                        .disabled(isUpdating)
-                        
-                        // Cancel button
-                        Button(action: {
-                            tempValue = value
-                            isEditing = false
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14))
-                                .foregroundColor(.red)
-                        }
-                        .disabled(isUpdating)
-                    }
-                } else {
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.black)
+                
+                Spacer()
+                
+                if !isEditing {
                     Button(action: {
+                        tempValue = value
                         isEditing = true
                     }) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
+                        ZStack {
+                            Circle()
+                                .fill(Color.gray.opacity(0.1))
+                                .frame(width: 28, height: 28)
+                            
+                            Image(systemName: "pencil")
+                                .font(.system(size: 12))
+                                .foregroundColor(.gray)
+                        }
                     }
                 }
             }
+            
+            if isEditing {
+                HStack(spacing: 8) {
+                    TextField("Enter \(title.lowercased())", text: $tempValue)
+                        .font(.system(size: 16))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                        .onAppear {
+                            tempValue = value
+                        }
+                    
+                    Button(action: {
+                        updatePatientDetails()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.green.opacity(0.1))
+                                .frame(width: 35, height: 35)
+                            
+                            if isUpdating {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .green))
+                                    .scaleEffect(0.7)
+                            } else {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.green)
+                            }
+                        }
+                    }
+                    .disabled(isUpdating)
+                    
+                    Button(action: {
+                        tempValue = value
+                        isEditing = false
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red.opacity(0.1))
+                                .frame(width: 35, height: 35)
+                            
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .disabled(isUpdating)
+                }
+            } else {
+                Text(value.isEmpty ? "Not specified" : value)
+                    .font(.system(size: 16))
+                    .foregroundColor(value.isEmpty ? .gray : .black)
+                    .italic(value.isEmpty)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.systemGray6).opacity(0.5))
+                    .cornerRadius(8)
+            }
         }
-        .padding(.vertical, 8)
         .alert("Update Status", isPresented: $showAlert) {
             Button("OK") { }
         } message: {
@@ -347,7 +522,7 @@ struct EditableProfileInfoRow: View {
         requestBody[apiFieldName] = tempValue
         
         // If updating emergency contact, handle it specially
-        if title.contains("Emergency") {
+        if title.contains("Contact") || title.contains("Phone Number") || title.contains("Relationship") {
             updateEmergencyContact(patientId: patientId, field: title, value: tempValue)
             return
         }
@@ -422,11 +597,11 @@ struct EditableProfileInfoRow: View {
         var emergencyContact = patient.emergencyContact?.first ?? EmergencyContact(id: "1", name: "", contactNumber: "", relation: "")
         
         switch field {
-        case "Name":
+        case "Contact Name":
             emergencyContact = EmergencyContact(id: emergencyContact.id, name: value, contactNumber: emergencyContact.contactNumber, relation: emergencyContact.relation)
-        case "Phone":
+        case "Phone Number":
             emergencyContact = EmergencyContact(id: emergencyContact.id, name: emergencyContact.name, contactNumber: value, relation: emergencyContact.relation)
-        case "Relation":
+        case "Relationship":
             emergencyContact = EmergencyContact(id: emergencyContact.id, name: emergencyContact.name, contactNumber: emergencyContact.contactNumber, relation: value)
         default:
             break
@@ -503,13 +678,13 @@ struct EditableProfileInfoRow: View {
     // Helper function to map UI field names to API field names
     private func getAPIFieldName(for fieldTitle: String) -> String {
         switch fieldTitle {
-        case "Name": return "name"
-        case "Email": return "email"
-        case "Phone": return "contactNumber"
+        case "Full Name": return "name"
+        case "Email Address": return "email"
+        case "Contact Number": return "contactNumber"
         case "Address": return "address"
         case "Blood Type": return "bloodType"
         case "Allergies": return "allergy"
-        case "Medications": return "medications"
+        case "Current Medications": return "medications"
         case "NIC Number": return "nicNo"
         case "Date of Birth": return "dob"
         case "Gender": return "gender"
@@ -520,11 +695,11 @@ struct EditableProfileInfoRow: View {
     // Helper function to update UserDefaults when fields are edited
     private func updateUserDefaults(field: String, value: String) {
         switch field {
-        case "Name":
+        case "Full Name":
             UserDefaults.standard.set(value, forKey: "name")
-        case "Email":
+        case "Email Address":
             UserDefaults.standard.set(value, forKey: "email")
-        case "Phone":
+        case "Contact Number":
             UserDefaults.standard.set(value, forKey: "contactNumber")
         default:
             break
@@ -536,13 +711,13 @@ struct EditableProfileInfoRow: View {
             
             // Update the patient object based on the field
             switch field {
-            case "Name": patient.name = value
-            case "Email": patient.email = value
-            case "Phone": patient.phone = value
+            case "Full Name": patient.name = value
+            case "Email Address": patient.email = value
+            case "Contact Number": patient.phone = value
             case "Address": patient.address = value
             case "Blood Type": patient.bloodType = value
             case "Allergies": patient.allergy = value
-            case "Medications": patient.medications = value
+            case "Current Medications": patient.medications = value
             case "NIC Number": patient.nicNo = value
             case "Date of Birth": patient.dob = value
             case "Gender": patient.gender = value
@@ -558,77 +733,9 @@ struct EditableProfileInfoRow: View {
 }
 
 // EmergencyContact model for the emergency contact array
-
 struct EmergencyContact: Codable {
     let id: String
     let name: String
     let contactNumber: String
     let relation: String
-}
-
-struct ProfileInfoRow: View {
-    let title: String
-    let value: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.black)
-            
-            HStack {
-                Text(value.isEmpty ? "Not specified" : value)
-                    .font(.system(size: 14))
-                    .foregroundColor(value.isEmpty ? .gray.opacity(0.7) : .gray)
-                    .italic(value.isEmpty)
-                
-                Spacer()
-                
-                Button(action: {}) {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-                }
-            }
-        }
-        .padding(.vertical, 8)
-    }
-}
-
-struct BottomNavItem: View {
-    let icon: String
-    let title: String
-    let isSelected: Bool
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(isSelected ? .blue : .gray)
-            
-            Text(title)
-                .font(.system(size: 12))
-                .foregroundColor(isSelected ? .blue : .gray)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-struct TabBarItem: View {
-    let icon: String
-    let title: String
-    let isSelected: Bool
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(isSelected ? .blue : .gray)
-            
-            Text(title)
-                .font(.system(size: 12))
-                .foregroundColor(isSelected ? .blue : .gray)
-        }
-        .frame(maxWidth: .infinity)
-    }
 }

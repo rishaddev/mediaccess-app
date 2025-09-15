@@ -45,7 +45,6 @@ struct Service: Identifiable, Codable {
     }
 }
 
-// Home Visit Booking Request structure
 struct HomeVisitBookingRequest: Codable {
     let patientId: String
     let patientName: String
@@ -64,7 +63,6 @@ struct HomeVisitBookingRequest: Codable {
     let instructions: String
 }
 
-// Custom annotation for map pin
 class CustomAnnotation: NSObject, MKAnnotation {
     let coordinate: CLLocationCoordinate2D
     let title: String?
@@ -77,7 +75,6 @@ class CustomAnnotation: NSObject, MKAnnotation {
     }
 }
 
-// Location Manager
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var location: CLLocationCoordinate2D?
@@ -115,7 +112,6 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 }
 
-// Map Selection View
 struct MapSelectionView: View {
     @Binding var selectedLocation: CLLocationCoordinate2D?
     @Binding var selectedAddress: String
@@ -134,7 +130,6 @@ struct MapSelectionView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Instructions
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Image(systemName: "info.circle.fill")
@@ -162,7 +157,6 @@ struct MapSelectionView: View {
                 .padding(.vertical, 12)
                 .background(Color(.systemGray6))
                 
-                // Map View
                 MapView(
                     region: $region,
                     annotation: $annotation,
@@ -170,7 +164,6 @@ struct MapSelectionView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
-                // Selected location info
                 if let location = selectedLocation {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
@@ -276,7 +269,6 @@ struct MapSelectionView: View {
             subtitle: "Getting address..."
         )
         
-        // Reverse geocoding to get address
         isLoadingAddress = true
         let geocoder = CLGeocoder()
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
@@ -303,10 +295,8 @@ struct MapSelectionView: View {
                     selectedCity = placemark.locality ?? placemark.subAdministrativeArea ?? ""
                     selectedPostalCode = placemark.postalCode ?? ""
                     
-                    // Generate Plus Code (simplified version)
                     plusCode = generatePlusCode(for: coordinate)
                     
-                    // Update annotation subtitle
                     annotation = CustomAnnotation(
                         coordinate: coordinate,
                         title: "Selected Location",
@@ -317,13 +307,10 @@ struct MapSelectionView: View {
         }
     }
     
-    // Simplified Plus Code generation (you might want to use Google's official library)
     private func generatePlusCode(for coordinate: CLLocationCoordinate2D) -> String {
-        // This is a simplified version. For production, use Google's Plus Codes library
         let lat = coordinate.latitude
         let lng = coordinate.longitude
         
-        // Basic encoding (this is not the actual Plus Codes algorithm)
         let latString = String(format: "%.6f", lat).replacingOccurrences(of: ".", with: "")
         let lngString = String(format: "%.6f", lng).replacingOccurrences(of: ".", with: "")
         
@@ -332,7 +319,6 @@ struct MapSelectionView: View {
     }
 }
 
-// UIViewRepresentable for MapKit
 struct MapView: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var annotation: CustomAnnotation?
@@ -346,7 +332,6 @@ struct MapView: UIViewRepresentable {
         mapView.showsUserLocation = true
         mapView.userTrackingMode = .none
         
-        // Add tap gesture
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         mapView.addGestureRecognizer(tapGesture)
         
@@ -356,10 +341,8 @@ struct MapView: UIViewRepresentable {
     func updateUIView(_ mapView: MKMapView, context: Context) {
         mapView.setRegion(region, animated: true)
         
-        // Remove existing annotations
         mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
         
-        // Add new annotation if exists
         if let annotation = annotation {
             mapView.addAnnotation(annotation)
         }
@@ -421,13 +404,11 @@ struct BookHomeVisitView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     
-    // Editable patient details
     @State private var editablePatientName = ""
     @State private var editableContactNumber = ""
     
     let onBackTapped: () -> Void
     
-    // Patient details from UserDefaults
     private var patientId: String {
         return UserDefaults.standard.string(forKey: "id") ?? ""
     }
@@ -802,7 +783,6 @@ struct BookHomeVisitView: View {
                 .foregroundColor(.black)
             
             VStack(spacing: 12) {
-                // Map Selection Button
                 Button(action: {
                     showingMapSelection = true
                 }) {

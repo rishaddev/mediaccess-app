@@ -29,9 +29,22 @@
 		958C7B5B2E41BCEF005862A0 /* mediaccess-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "mediaccess-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		955808E82E72D64800D405A8 /* Exceptions for "mediaccess-app" folder in "mediaccess-app" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 958C7B402E41BCEE005862A0 /* mediaccess-app */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		958C7B432E41BCEE005862A0 /* mediaccess-app */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				955808E82E72D64800D405A8 /* Exceptions for "mediaccess-app" folder in "mediaccess-app" target */,
+			);
 			path = "mediaccess-app";
 			sourceTree = "<group>";
 		};
@@ -400,6 +413,7 @@
 				DEVELOPMENT_TEAM = Q38DTS453C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "mediaccess-app/Info.plist";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "This app needs access to your calendar to add appointment reminders";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs access to camera to take prescription photos";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use this to unlock this phone";
@@ -434,6 +448,7 @@
 				DEVELOPMENT_TEAM = Q38DTS453C;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "mediaccess-app/Info.plist";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "This app needs access to your calendar to add appointment reminders";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs access to camera to take prescription photos";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "We use this to unlock this phone";

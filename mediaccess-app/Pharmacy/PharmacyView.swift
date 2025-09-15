@@ -59,6 +59,8 @@ struct PharmacyView: View {
     @State private var isLoadingOrders = false
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var showingNotifications = false
+
     
     var body: some View {
         ZStack {
@@ -74,6 +76,9 @@ struct PharmacyView: View {
         .sheet(isPresented: $showOrderHistory) {
             OrderHistoryView()
         }
+        .fullScreenCover(isPresented: $showingNotifications) {
+                    NotificationsView()
+                }
     }
     
     private var mainContent: some View {
@@ -93,7 +98,9 @@ struct PharmacyView: View {
             
             Spacer()
             
-            Button(action: {}) {
+            Button(action: {
+                showingNotifications = true
+            }) {
                 Image(systemName: "bell")
                     .font(.system(size: 14))
                     .foregroundColor(.black)

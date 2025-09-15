@@ -7,172 +7,27 @@ struct SettingsView: View {
     @State private var showingTerms = false
     @State private var showingLogoutAlert = false
     
-    // Closure to handle logout action - needs to be passed from parent
     let onLogout: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
-            
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.title2)
-                        .foregroundColor(.black)
-                }
-                
-                Spacer()
-                
-                Text("Settings")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.black)
-                
-                Spacer()
-                
-                // Empty space to balance the header
-                Image(systemName: "arrow.left")
-                    .font(.title2)
-                    .foregroundColor(.clear)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
+            headerView
             
             ScrollView {
                 VStack(spacing: 24) {
-                    // User Info Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("Account")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 30)
-                        
-                        // Current User Info
-                        VStack(spacing: 12) {
-                            HStack(spacing: 16) {
-                                // User Avatar
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.blue.opacity(0.1))
-                                        .frame(width: 60, height: 60)
-                                    
-                                    Text(getUserInitials())
-                                        .font(.system(size: 20, weight: .semibold))
-                                        .foregroundColor(.blue)
-                                }
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(getDisplayName())
-                                        .font(.system(size: 18, weight: .semibold))
-                                        .foregroundColor(.black)
-                                    
-                                    Text(getUserEmail())
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.gray)
-                                    
-                                    Text("Logged in")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.green)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(Color.green.opacity(0.1))
-                                        .cornerRadius(4)
-                                }
-                                
-                                Spacer()
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
-                            .background(Color.white)
-                            .cornerRadius(12)
-                        }
-                    }
-                    
-                    // Preferences Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Text("Preferences")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.black)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        VStack(spacing: 0) {
-                            SettingsRow(
-                                icon: "bell",
-                                title: "Notifications",
-                                subtitle: "Manage how you receive updates and reminders",
-                                action: {
-                                    showingNotifications = true
-                                }
-                            )
-                            
-                            Divider()
-                                .padding(.leading, 70)
-                            
-                            SettingsRow(
-                                icon: "shield",
-                                title: "Privacy",
-                                subtitle: "Control your privacy settings",
-                                action: {
-                                    showingPrivacySettings = true
-                                }
-                            )
-                            
-                            Divider()
-                                .padding(.leading, 70)
-                            
-                            SettingsRow(
-                                icon: "doc.text",
-                                title: "Terms of Service",
-                                subtitle: "",
-                                action: {
-                                    showingTerms = true
-                                }
-                            )
-                        }
-                        .background(Color.white)
-                        .cornerRadius(12)
-                    }
-                    
-                    Spacer(minLength: 200)
-                }
-            }
-            
-            // Log Out Button
-            VStack {
-                Button(action: {
-                    showingLogoutAlert = true
-                }) {
-                    HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .font(.system(size: 16))
-                        
-                        Text("Log Out")
-                            .font(.system(size: 16, weight: .medium))
-                    }
-                    .foregroundColor(.red)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.red.opacity(0.1))
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.red.opacity(0.3), lineWidth: 1)
-                    )
+                    accountSection
+                    preferencesSection
+                    Spacer(minLength: 120)
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 10)
+                .padding(.top, 20)
             }
+            
+            logoutButton
         }
         .background(Color(.systemGroupedBackground))
         .fullScreenCover(isPresented: $showingNotifications) {
-            NotificationsView()
+            NotificationsSettingsView()
         }
         .fullScreenCover(isPresented: $showingPrivacySettings) {
             PrivacySettingsView()
@@ -190,7 +45,214 @@ struct SettingsView: View {
         }
     }
     
-    // MARK: - Helper Functions
+    private var headerView: some View {
+        HStack {
+            Button(action: {
+                dismiss()
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 40, height: 40)
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.black)
+                }
+            }
+            
+            Spacer()
+            
+            Text("Settings")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(.black)
+            
+            Spacer()
+            
+            // Balance the header
+            Circle()
+                .fill(Color.clear)
+                .frame(width: 40, height: 40)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+        .padding(.bottom, 5)
+        .background(Color(.systemGroupedBackground))
+    }
+    
+    private var accountSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.blue)
+                }
+                
+                Text("Account")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.black)
+                
+                Spacer()
+            }
+            
+            // User Info Card
+            HStack(spacing: 16) {
+                // User Avatar with gradient
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient(
+                            gradient: Gradient(colors: [Color.blue.opacity(0.8), Color.blue.opacity(0.6)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ))
+                        .frame(width: 60, height: 60)
+                        .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
+                    
+                    Text(getUserInitials())
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(getDisplayName())
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.black)
+                    
+                    Text(getUserEmail())
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                    
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                        
+                        Text("Online")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.green)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(12)
+                }
+                
+                Spacer()
+            }
+            .padding(20)
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
+        }
+    }
+    
+    private var preferencesSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.purple.opacity(0.1))
+                        .frame(width: 35, height: 35)
+                    
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 16))
+                        .foregroundColor(.purple)
+                }
+                
+                Text("Preferences")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.black)
+                
+                Spacer()
+            }
+            
+            VStack(spacing: 0) {
+                ModernSettingsRow(
+                    icon: "bell.fill",
+                    iconColor: .orange,
+                    title: "Notifications",
+                    subtitle: "Manage how you receive updates and reminders",
+                    action: {
+                        showingNotifications = true
+                    }
+                )
+                
+                Divider()
+                    .padding(.leading, 70)
+                
+                ModernSettingsRow(
+                    icon: "shield.fill",
+                    iconColor: .blue,
+                    title: "Privacy",
+                    subtitle: "Control your privacy settings",
+                    action: {
+                        showingPrivacySettings = true
+                    }
+                )
+                
+                Divider()
+                    .padding(.leading, 70)
+                
+                ModernSettingsRow(
+                    icon: "doc.text.fill",
+                    iconColor: .green,
+                    title: "Terms of Service",
+                    subtitle: "Review our terms and conditions",
+                    action: {
+                        showingTerms = true
+                    }
+                )
+            }
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
+        }
+    }
+    
+    private var logoutButton: some View {
+        VStack {
+            Button(action: {
+                showingLogoutAlert = true
+            }) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.red.opacity(0.1))
+                            .frame(width: 40, height: 40)
+                        
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.red)
+                    }
+                    
+                    Text("Log Out")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.red)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(Color.white)
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                )
+                .shadow(color: .red.opacity(0.1), radius: 3, x: 0, y: 2)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+            .padding(.top, 10)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
     
     private func getUserEmail() -> String {
         return UserDefaults.standard.string(forKey: "email") ?? "user@email.com"
@@ -224,8 +286,9 @@ struct SettingsView: View {
     }
 }
 
-struct SettingsRow: View {
+struct ModernSettingsRow: View {
     let icon: String
+    let iconColor: Color
     let title: String
     let subtitle: String
     let action: () -> Void
@@ -233,26 +296,25 @@ struct SettingsRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                // Icon
+                // Modern Icon with gradient background
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.gray.opacity(0.1))
-                        .frame(width: 40, height: 40)
+                    Circle()
+                        .fill(iconColor.opacity(0.1))
+                        .frame(width: 45, height: 45)
                     
                     Image(systemName: icon)
-                        .font(.system(size: 18))
-                        .foregroundColor(.black)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(iconColor)
                 }
                 
-                
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.black)
                     
                     if !subtitle.isEmpty {
                         Text(subtitle)
-                            .font(.system(size: 14))
+                            .font(.system(size: 13))
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.leading)
                     }
@@ -260,13 +322,19 @@ struct SettingsRow: View {
                 
                 Spacer()
                 
-                // Arrow
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
+                // Modern arrow with background
+                ZStack {
+                    Circle()
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(width: 30, height: 30)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.vertical, 18)
         }
         .buttonStyle(PlainButtonStyle())
     }
