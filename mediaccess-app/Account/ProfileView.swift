@@ -6,7 +6,6 @@ struct ProfileView: View {
     @State private var showingSettings = false
     let onLogout: () -> Void
     
-    // State variables for editing
     @State private var isEditingName = false
     @State private var isEditingEmail = false
     @State private var isEditingPhone = false
@@ -21,13 +20,11 @@ struct ProfileView: View {
     @State private var isEditingEmergencyPhone = false
     @State private var isEditingEmergencyRelation = false
     
-    // Get data from UserDefaults (populated during login)
     private var userData: Patient? {
         guard let patientData = UserDefaults.standard.data(forKey: "patientData") else { return nil }
         return try? JSONDecoder().decode(Patient.self, from: patientData)
     }
     
-    // Editable values - initialized from stored data
     @State private var name: String
     @State private var email: String
     @State private var contactNumber: String
@@ -43,17 +40,14 @@ struct ProfileView: View {
     @State private var emergencyRelation: String
     @State private var patientId: String
     
-    // Custom initializer to load data from UserDefaults
     init(onLogout: @escaping () -> Void) {
         self.onLogout = onLogout
         
-        // Initialize from stored patient data or fallback to defaults
         let storedName = UserDefaults.standard.string(forKey: "userName") ?? ""
         let storedEmail = UserDefaults.standard.string(forKey: "userEmail") ?? ""
         let storedContactNumber = UserDefaults.standard.string(forKey: "userPhone") ?? ""
         let storedId = UserDefaults.standard.string(forKey: "userId") ?? ""
         
-        // Try to get full patient data
         var patient: Patient?
         if let patientData = UserDefaults.standard.data(forKey: "patientData") {
             patient = try? JSONDecoder().decode(Patient.self, from: patientData)
@@ -71,7 +65,6 @@ struct ProfileView: View {
         _dob = State(initialValue: patient?.dob ?? "")
         _gender = State(initialValue: patient?.gender ?? "")
         
-        // Emergency contact data (assuming first emergency contact)
         let firstEmergencyContact = patient?.emergencyContact?.first
         _emergencyName = State(initialValue: firstEmergencyContact?.name ?? "")
         _emergencyPhone = State(initialValue: firstEmergencyContact?.contactNumber ?? "")
@@ -148,7 +141,6 @@ struct ProfileView: View {
     
     private var profileHeaderSection: some View {
         VStack(spacing: 16) {
-            // Profile Avatar
             ZStack {
                 Circle()
                     .fill(LinearGradient(
@@ -378,7 +370,6 @@ struct ProfileView: View {
         .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
     
-    // Helper function to get initials from name
     private func getInitials(from name: String) -> String {
         guard !name.isEmpty else { return "?" }
         let components = name.components(separatedBy: " ")
@@ -504,7 +495,6 @@ struct ModernEditableRow: View {
         }
     }
     
-    // Function to update patient details via API
     private func updatePatientDetails() {
         guard let patientId = UserDefaults.standard.string(forKey: "userId"), !patientId.isEmpty else {
             alertMessage = "Patient ID not found"
@@ -514,20 +504,16 @@ struct ModernEditableRow: View {
         
         isUpdating = true
         
-        // Prepare the request body with the updated field
         var requestBody: [String: Any] = ["id": patientId]
         
-        // Map the field title to the correct API field name
         let apiFieldName = getAPIFieldName(for: title)
         requestBody[apiFieldName] = tempValue
         
-        // If updating emergency contact, handle it specially
         if title.contains("Contact") || title.contains("Phone Number") || title.contains("Relationship") {
             updateEmergencyContact(patientId: patientId, field: title, value: tempValue)
             return
         }
         
-        // Make API call
         guard let url = URL(string: "https://mediaccess.vercel.app/api/patient/update") else {
             isUpdating = false
             alertMessage = "Invalid API endpoint"
@@ -560,14 +546,12 @@ struct ModernEditableRow: View {
                 
                 if let httpResponse = response as? HTTPURLResponse {
                     if httpResponse.statusCode == 200 {
-                        // Success - update local values
                         self.value = self.tempValue
                         self.isEditing = false
                         self.updateUserDefaults(field: self.title, value: self.tempValue)
                         self.alertMessage = "\(self.title) updated successfully"
                         self.showAlert = true
                     } else {
-                        // Error
                         if let data = data,
                            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                            let message = json["message"] as? String {
@@ -582,9 +566,7 @@ struct ModernEditableRow: View {
         }.resume()
     }
     
-    // Function to handle emergency contact updates
     private func updateEmergencyContact(patientId: String, field: String, value: String) {
-        // Get current patient data
         guard let patientData = UserDefaults.standard.data(forKey: "patientData"),
               var patient = try? JSONDecoder().decode(Patient.self, from: patientData) else {
             isUpdating = false
@@ -593,7 +575,6 @@ struct ModernEditableRow: View {
             return
         }
         
-        // Update emergency contact
         var emergencyContact = patient.emergencyContact?.first ?? EmergencyContact(id: "1", name: "", contactNumber: "", relation: "")
         
         switch field {
@@ -607,7 +588,6 @@ struct ModernEditableRow: View {
             break
         }
         
-        // Prepare request body with emergency contact array
         let requestBody: [String: Any] = [
             "id": patientId,
             "emergencyContact": [
@@ -675,7 +655,6 @@ struct ModernEditableRow: View {
         }.resume()
     }
     
-    // Helper function to map UI field names to API field names
     private func getAPIFieldName(for fieldTitle: String) -> String {
         switch fieldTitle {
         case "Full Name": return "name"
@@ -692,7 +671,6 @@ struct ModernEditableRow: View {
         }
     }
     
-    // Helper function to update UserDefaults when fields are edited
     private func updateUserDefaults(field: String, value: String) {
         switch field {
         case "Full Name":
@@ -724,7 +702,6 @@ struct ModernEditableRow: View {
             default: break
             }
             
-            // Save the updated patient data back to UserDefaults
             if let updatedData = try? JSONEncoder().encode(patient) {
                 UserDefaults.standard.set(updatedData, forKey: "patientData")
             }

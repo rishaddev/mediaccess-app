@@ -3,7 +3,7 @@ import UserNotifications
 
 struct NotificationsSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var pushNotificationsEnabled = true
+    @State private var pushNotificationsEnabled = false
     @State private var showAlert = false
     @State private var alertMessage = ""
     
@@ -23,7 +23,7 @@ struct NotificationsSettingsView: View {
         }
         .background(Color(.systemGroupedBackground))
         .onAppear {
-            checkNotificationPermission()
+            loadNotificationSettings()
         }
         .alert("Notification Settings", isPresented: $showAlert) {
             Button("OK") { }
@@ -131,9 +131,6 @@ struct NotificationsSettingsView: View {
                     .cornerRadius(12)
                 }
                 
-//                Spacer()
-                
-                
                 Toggle("", isOn: $pushNotificationsEnabled)
                     .toggleStyle(SwitchToggleStyle(tint: .orange))
                     .onChange(of: pushNotificationsEnabled) { oldValue, newValue in
@@ -208,52 +205,51 @@ struct NotificationsSettingsView: View {
         }
     }
     
-    private func checkNotificationPermission() {
+    private func loadNotificationSettings() {
+        // Load the user preference first
+        pushNotificationsEnabled = NotificationManager.shared.isNotificationEnabled
+        
+        // Also check system permission status to keep UI in sync
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
-                switch settings.authorizationStatus {
-                case .authorized, .provisional:
-                    pushNotificationsEnabled = true
-                case .denied:
+                // If system permission is denied, disable the toggle
+                if settings.authorizationStatus == .denied {
                     pushNotificationsEnabled = false
-                case .notDetermined:
-                    pushNotificationsEnabled = false
-                @unknown default:
-                    pushNotificationsEnabled = false
+                    NotificationManager.shared.isNotificationEnabled = false
                 }
             }
         }
     }
     
     private func handleNotificationToggle(_ isEnabled: Bool) {
+        // Update the preference immediately
+        NotificationManager.shared.isNotificationEnabled = isEnabled
+        
         if isEnabled {
             // Request notification permission
-            NotificationManager.shared.requestPermission()
-            UNUserNotificationCenter.current().getNotificationSettings { settings in
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
                 DispatchQueue.main.async {
-                    switch settings.authorizationStatus {
-                    case .denied:
-                        pushNotificationsEnabled = false
-                        alertMessage = "Notifications are disabled in Settings. Please go to Settings > Notifications > MediaAccess to enable them."
-                        showAlert = true
-                    case .authorized, .provisional:
+                    if granted {
+                        NotificationManager.shared.isNotificationEnabled = true
                         pushNotificationsEnabled = true
                         alertMessage = "Push notifications enabled! You'll receive appointment reminders and order updates."
                         showAlert = true
                         
                         // Announce to VoiceOver users
                         UIAccessibility.post(notification: .announcement, argument: "Push notifications enabled")
-                    case .notDetermined:
-                        // Permission request is in progress
-                        break
-                    @unknown default:
-                        break
+                    } else {
+                        NotificationManager.shared.isNotificationEnabled = false
+                        pushNotificationsEnabled = false
+                        alertMessage = "Notifications are disabled in Settings. Please go to Settings > Notifications > MediaAccess to enable them."
+                        showAlert = true
                     }
                 }
             }
         } else {
-            // Disable notifications by clearing all scheduled ones
+            // Disable notifications by clearing all scheduled ones and updating preference
             NotificationManager.shared.clearAllNotifications()
+            NotificationManager.shared.isNotificationEnabled = false
+            
             alertMessage = "All notifications have been disabled and cleared."
             showAlert = true
             

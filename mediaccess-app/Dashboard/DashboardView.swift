@@ -19,6 +19,7 @@ struct DashboardView: View {
     
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @StateObject private var badgeManager = NotificationBadgeManager.shared
     
     let onLogout: () -> Void
     
@@ -97,8 +98,11 @@ struct DashboardView: View {
             PlaceNewOrderView()
         }
         .fullScreenCover(isPresented: $showingNotifications) {
-                    NotificationsView()
+            NotificationsView()
+                .onDisappear {
+                    badgeManager.fetchNotificationCount()
                 }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Medical Dashboard")
     }
@@ -127,6 +131,7 @@ struct DashboardView: View {
             }
             .onAppear {
                 fetchAppointments()
+                badgeManager.fetchNotificationCount()
             }
         }
     }
@@ -174,16 +179,31 @@ struct DashboardView: View {
             Button(action: {
                 showingNotifications = true
             }) {
-                Image(systemName: "bell")
-                    .font(.system(size: 14))
-                    .foregroundColor(.black)
+                ZStack {
+                    Image(systemName: "bell")
+                        .font(.system(size: 14))
+                        .foregroundColor(.black)
+                    
+                    if badgeManager.notificationCount > 0 {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 16, height: 16)
+                            
+                            Text("\(min(badgeManager.notificationCount, 99))")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .offset(x: 8, y: -8)
+                    }
+                }
             }
             .padding(10)
             .overlay(
                 Circle()
                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
             )
-            .accessibilityLabel("Notifications")
+            .accessibilityLabel(badgeManager.notificationCount > 0 ? "Notifications (\(badgeManager.notificationCount) unread)" : "Notifications")
             .accessibilityHint("Double tap to view notifications")
             .accessibilityAddTraits(.isButton)
         }
@@ -598,7 +618,6 @@ struct DashboardView: View {
                     let response = try JSONDecoder().decode(AppointmentsResponse.self, from: data)
                     self.appointments = response.appointments
                     
-                    // Announce appointment updates to VoiceOver users
                     if !response.appointments.isEmpty {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             UIAccessibility.post(notification: .announcement,
@@ -654,7 +673,6 @@ struct DashboardView: View {
                     let response = try JSONDecoder().decode(PharmacyOrdersResponse.self, from: data)
                     self.currentOrders = response.pharmacyorders
                     
-                    // Announce order updates to VoiceOver users
                     let activeOrders = response.pharmacyorders.filter {
                         $0.status == "Pending" || $0.status == "Processing" || $0.status == "Ready"
                     }

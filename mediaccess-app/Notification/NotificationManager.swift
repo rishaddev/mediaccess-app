@@ -2,18 +2,52 @@ import UIKit
 import Foundation
 import UserNotifications
 
-class NotificationManager: ObservableObject {
+class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
     
-    private init() {}
+    // Key for storing notification preference
+    private let notificationsEnabledKey = "pushNotificationsEnabled"
+    
+    override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
+    
+    // MARK: - UNUserNotificationCenterDelegate
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        // Check if notifications are enabled when about to present
+        if isNotificationEnabled {
+            completionHandler([.banner, .sound, .badge])
+        } else {
+            // Don't show notification if disabled by user preference
+            print("Notification blocked - user has disabled notifications")
+            completionHandler([])
+        }
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        completionHandler()
+    }
+    
+    var isNotificationEnabled: Bool {
+        get {
+            return UserDefaults.standard.bool(forKey: notificationsEnabledKey)
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: notificationsEnabledKey)
+        }
+    }
     
     func requestPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             DispatchQueue.main.async {
                 if granted {
                     print("Notification permission granted")
+                    // Don't auto-enable - let user control this through settings
                 } else if let error = error {
                     print("Notification permission denied: \(error.localizedDescription)")
+                    self.isNotificationEnabled = false
                 }
             }
         }
@@ -33,6 +67,7 @@ class NotificationManager: ObservableObject {
             return
         }
         
+        // Always schedule the notification, but don't change user preference
         scheduleReminders(
             appointmentDateTime: appointmentDateTime,
             patientName: patientName,

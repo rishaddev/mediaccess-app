@@ -420,7 +420,7 @@ struct AppointmentDetailsView: View {
     private var actionButtonsSection: some View {
         VStack(spacing: 12) {
             primaryActionButton
-            secondaryActionButtons
+//            secondaryActionButtons
         }
     }
     

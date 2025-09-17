@@ -60,6 +60,7 @@ struct PharmacyView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var showingNotifications = false
+    @StateObject private var badgeManager = NotificationBadgeManager.shared
 
     
     var body: some View {
@@ -77,8 +78,11 @@ struct PharmacyView: View {
             OrderHistoryView()
         }
         .fullScreenCover(isPresented: $showingNotifications) {
-                    NotificationsView()
+            NotificationsView()
+                .onDisappear {
+                    badgeManager.fetchNotificationCount()
                 }
+        }
     }
     
     private var mainContent: some View {
@@ -88,6 +92,9 @@ struct PharmacyView: View {
         }
         .background(Color(.systemGroupedBackground))
         .opacity(showOrderTracking ? 0 : 1)
+        .onAppear {
+            badgeManager.fetchNotificationCount()
+        }
     }
     
     private var headerSection: some View {
@@ -101,9 +108,25 @@ struct PharmacyView: View {
             Button(action: {
                 showingNotifications = true
             }) {
-                Image(systemName: "bell")
-                    .font(.system(size: 14))
-                    .foregroundColor(.black)
+                ZStack {
+                    Image(systemName: "bell")
+                        .font(.system(size: 14))
+                        .foregroundColor(.black)
+                    
+                    // Notification badge
+                    if badgeManager.notificationCount > 0 {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 16, height: 16)
+                            
+                            Text("\(min(badgeManager.notificationCount, 99))")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .offset(x: 8, y: -8)
+                    }
+                }
             }
             .padding(10)
             .overlay(

@@ -421,6 +421,7 @@ struct LoginView: View {
     private func storeUserData(patient: Patient) {
         UserDefaults.standard.set(patient.email, forKey: "email")
         UserDefaults.standard.set(patient.email, forKey: "userEmail")
+        UserDefaults.standard.set(patient.id, forKey: "userId")
         UserDefaults.standard.set(patient.id, forKey: "id")
         UserDefaults.standard.set(patient.id, forKey: "patientId")
         UserDefaults.standard.set(patient.name, forKey: "name")

@@ -8,54 +8,194 @@ struct NotificationsView: View {
     @State private var isLoading = true
     @State private var showAlert = false
     @State private var alertMessage = ""
+    @State private var showClearConfirmation = false
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                if isLoading {
-                    loadingView
-                } else {
-                    notificationsList
-                }
+        VStack(spacing: 0) {
+            headerView
+            
+            if isLoading {
+                loadingView
+            } else {
+                notificationsList
             }
-            .navigationTitle("Notifications")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Clear All") {
-                        clearAllNotifications()
-                    }
-                    .disabled(pendingNotifications.isEmpty && deliveredNotifications.isEmpty)
-                }
+        }
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color(.systemGroupedBackground), Color.white.opacity(0.9)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .onAppear {
+            fetchNotifications()
+        }
+        .alert("Clear All Notifications", isPresented: $showClearConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear All", role: .destructive) {
+                clearAllNotifications()
             }
-            .onAppear {
-                fetchNotifications()
-            }
-            .alert("Error", isPresented: $showAlert) {
-                Button("OK") { }
-            } message: {
-                Text(alertMessage)
-            }
+        } message: {
+            Text("This will clear all pending and delivered notifications. This action cannot be undone.")
+        }
+        .alert("Error", isPresented: $showAlert) {
+            Button("OK") { }
+        } message: {
+            Text(alertMessage)
         }
         .accessibilityLabel("Notifications screen")
     }
     
-    private var loadingView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
-                .scaleEffect(1.5)
+    private var headerView: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 40, height: 40)
+                            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.gray)
+                    }
+                }
+                .accessibilityLabel("Close notifications")
+                
+                Spacer()
+                
+                VStack(spacing: 2) {
+                    Text("Notifications")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.black)
+                    
+                    if !isLoading {
+                        let totalCount = pendingNotifications.count + deliveredNotifications.count
+                        Text("\(totalCount) notification\(totalCount == 1 ? "" : "s")")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                Spacer()
+                
+                if !pendingNotifications.isEmpty || !deliveredNotifications.isEmpty {
+                    Button(action: {
+                        showClearConfirmation = true
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red.opacity(0.1))
+                                .frame(width: 40, height: 40)
+                            
+                            Image(systemName: "trash")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .accessibilityLabel("Clear all notifications")
+                } else {
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 40, height: 40)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 20)
             
-            Text("Loading notifications...")
-                .font(.system(size: 16))
-                .foregroundColor(.gray)
+            if !isLoading && (!pendingNotifications.isEmpty || !deliveredNotifications.isEmpty) {
+                notificationSummaryBar
+            }
+        }
+        .background(
+            LinearGradient(
+                gradient: Gradient(colors: [Color.white, Color(.systemGroupedBackground)]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+    
+    private var notificationSummaryBar: some View {
+        HStack(spacing: 16) {
+            if !pendingNotifications.isEmpty {
+                VStack(spacing: 2) {
+                    Text("\(pendingNotifications.count)")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.orange)
+                    Text("Upcoming")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.orange)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.orange.opacity(0.1))
+                .cornerRadius(12)
+            }
+            
+            if !deliveredNotifications.isEmpty {
+                VStack(spacing: 2) {
+                    Text("\(deliveredNotifications.count)")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.green)
+                    Text("Recent")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.green)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.green.opacity(0.1))
+                .cornerRadius(12)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 16)
+    }
+    
+    private var loadingView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            ZStack {
+                Circle()
+                    .stroke(Color.blue.opacity(0.2), lineWidth: 8)
+                    .frame(width: 80, height: 80)
+                
+                Circle()
+                    .trim(from: 0, to: 0.3)
+                    .stroke(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.blue, Color.purple]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    )
+                    .frame(width: 80, height: 80)
+                    .rotationEffect(.degrees(-90))
+                    .animation(
+                        Animation.linear(duration: 1.5).repeatForever(autoreverses: false),
+                        value: isLoading
+                    )
+            }
+            
+            VStack(spacing: 8) {
+                Text("Loading notifications...")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(.black)
+                
+                Text("Please wait while we gather your reminders")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+            }
+            
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,7 +209,7 @@ struct NotificationsView: View {
                 emptyNotificationsView
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 16) {
+                    LazyVStack(spacing: 20) {
                         if !pendingNotifications.isEmpty {
                             upcomingNotificationsSection
                         }
@@ -78,7 +218,7 @@ struct NotificationsView: View {
                             recentNotificationsSection
                         }
                         
-                        Spacer(minLength: 20)
+                        Spacer(minLength: 40)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
@@ -88,28 +228,43 @@ struct NotificationsView: View {
     }
     
     private var emptyNotificationsView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 32) {
             Spacer()
             
             ZStack {
                 Circle()
-                    .fill(Color.gray.opacity(0.1))
-                    .frame(width: 80, height: 80)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.blue.opacity(0.1), Color.purple.opacity(0.1)]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 120, height: 120)
                 
-                Image(systemName: "bell.slash")
-                    .font(.system(size: 36))
-                    .foregroundColor(.gray)
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 48, weight: .light))
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: [Color.blue, Color.purple]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             }
             
-            Text("No Notifications")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.black)
-            
-            Text("You're all caught up! No notifications to display.")
-                .font(.system(size: 14))
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            VStack(spacing: 16) {
+                Text("All Caught Up!")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundColor(.black)
+                
+                Text("You have no pending reminders or recent notifications. We'll notify you when there's something important.")
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+                    .padding(.horizontal, 20)
+            }
             
             Spacer()
         }
@@ -120,19 +275,39 @@ struct NotificationsView: View {
     }
     
     private var upcomingNotificationsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Upcoming Reminders")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.black)
-                .padding(.horizontal, 4)
-                .accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.orange)
+                    
+                    Text("Upcoming Reminders")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.black)
+                }
+                
+                Spacer()
+                
+                Text("\(pendingNotifications.count)")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.orange)
+                    .cornerRadius(8)
+            }
+            .padding(.horizontal, 4)
+            .accessibilityAddTraits(.isHeader)
             
             ForEach(Array(pendingNotifications.enumerated()), id: \.element.identifier) { index, notification in
                 NotificationCard(
                     notification: notification,
                     isPending: true,
                     onCancel: {
-                        cancelNotification(notification)
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            cancelNotification(notification)
+                        }
                     }
                 )
                 .accessibilityLabel("Upcoming reminder \(index + 1)")
@@ -141,12 +316,30 @@ struct NotificationsView: View {
     }
     
     private var recentNotificationsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Notifications")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundColor(.black)
-                .padding(.horizontal, 4)
-                .accessibilityAddTraits(.isHeader)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.green)
+                    
+                    Text("Recent Notifications")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.black)
+                }
+                
+                Spacer()
+                
+                Text("\(deliveredNotifications.count)")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.green)
+                    .cornerRadius(8)
+            }
+            .padding(.horizontal, 4)
+            .accessibilityAddTraits(.isHeader)
             
             ForEach(Array(deliveredNotifications.enumerated()), id: \.element.request.identifier) { index, notification in
                 NotificationCard(
@@ -190,7 +383,9 @@ struct NotificationsView: View {
         }
         
         group.notify(queue: .main) {
-            self.isLoading = false
+            withAnimation(.easeOut(duration: 0.5)) {
+                self.isLoading = false
+            }
             
             // Announce to VoiceOver users
             let totalCount = self.pendingNotifications.count + self.deliveredNotifications.count
@@ -213,8 +408,11 @@ struct NotificationsView: View {
     
     private func clearAllNotifications() {
         NotificationManager.shared.clearAllNotifications()
-        pendingNotifications.removeAll()
-        deliveredNotifications.removeAll()
+        
+        withAnimation(.easeOut(duration: 0.5)) {
+            pendingNotifications.removeAll()
+            deliveredNotifications.removeAll()
+        }
         
         // Announce to VoiceOver users
         UIAccessibility.post(notification: .announcement, argument: "All notifications cleared")
@@ -226,6 +424,7 @@ struct NotificationCard: View {
     let deliveredNotification: UNNotification?
     let isPending: Bool
     var onCancel: (() -> Void)?
+    @State private var isPressed = false
     
     init(notification: UNNotificationRequest, isPending: Bool, onCancel: @escaping () -> Void) {
         self.notification = notification
@@ -262,69 +461,130 @@ struct NotificationCard: View {
         return "bell.fill"
     }
     
-    private var notificationColor: Color {
+    private var notificationColors: [Color] {
         if content.userInfo["type"] as? String == "appointment_reminder" {
-            return .blue
+            return [Color.blue, Color.indigo]
         }
-        return .orange
+        return [Color.orange, Color.red]
     }
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Icon
+        HStack(spacing: 16) {
+            // Enhanced Icon
             ZStack {
                 Circle()
-                    .fill(notificationColor.opacity(0.1))
-                    .frame(width: 50, height: 50)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: notificationColors.map { $0.opacity(0.15) }),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 60, height: 60)
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    gradient: Gradient(colors: notificationColors.map { $0.opacity(0.3) }),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
                 
                 Image(systemName: notificationIcon)
-                    .font(.system(size: 20))
-                    .foregroundColor(notificationColor)
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(
+                        LinearGradient(
+                            gradient: Gradient(colors: notificationColors),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             }
             .accessibilityHidden(true)
             
             // Content
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(content.title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(.black)
+                    .lineLimit(2)
                 
                 Text(content.body)
-                    .font(.system(size: 14))
+                    .font(.system(size: 15))
                     .foregroundColor(.gray)
                     .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
                 
                 if let date = scheduledDate {
-                    HStack {
-                        Image(systemName: isPending ? "clock" : "checkmark.circle.fill")
-                            .font(.system(size: 12))
+                    HStack(spacing: 6) {
+                        Image(systemName: isPending ? "clock.fill" : "checkmark.circle.fill")
+                            .font(.system(size: 11))
                             .foregroundColor(isPending ? .orange : .green)
                         
                         Text(isPending ? "Scheduled for \(formatDate(date))" : "Delivered \(formatDate(date))")
-                            .font(.system(size: 12))
-                            .foregroundColor(.gray)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(isPending ? .orange : .green)
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background((isPending ? Color.orange : Color.green).opacity(0.1))
+                    .cornerRadius(20)
                 }
             }
             
             Spacer()
             
-            // Action button for pending notifications
+            // Enhanced Action button for pending notifications
             if isPending, let onCancel = onCancel {
                 Button(action: onCancel) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.gray.opacity(0.6))
+                    ZStack {
+                        Circle()
+                            .fill(Color.red.opacity(0.1))
+                            .frame(width: 36, height: 36)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                            )
+                        
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.red)
+                    }
                 }
+                .scaleEffect(isPressed ? 0.95 : 1.0)
+                .animation(.easeInOut(duration: 0.1), value: isPressed)
                 .accessibilityLabel("Cancel notification")
                 .accessibilityHint("Double tap to cancel this reminder")
                 .accessibilityAddTraits(.isButton)
             }
         }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(
+                    color: Color.black.opacity(0.08),
+                    radius: 8,
+                    x: 0,
+                    y: 4
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.white, Color.gray.opacity(0.1)]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(content.title). \(content.body)")
         .accessibilityValue(scheduledDate != nil ? (isPending ? "Scheduled for \(formatDate(scheduledDate!))" : "Delivered \(formatDate(scheduledDate!))") : "")

@@ -2,7 +2,7 @@ import SwiftUI
 import MapKit
 
 struct AppointmentDetail: Codable, Identifiable {
-        let id = UUID()
+    let id = UUID()
     let appointmentDate: String
     let appointmentTime: String
     let contactNumber: String
@@ -21,7 +21,7 @@ struct AppointmentDetail: Codable, Identifiable {
 }
 
 struct HomevisitDetail: Codable, Identifiable {
-        let id = UUID()
+    let id = UUID()
     let address: String
     let city: String
     let contactNumber: String
@@ -59,10 +59,14 @@ struct AppointmentsView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var showingNotifications = false
+    @StateObject private var badgeManager = NotificationBadgeManager.shared
     
     
     let onBookAppointment: () -> Void
     let onBookHomeVisit: () -> Void
+    
+    @State private var showingAllAppointments = false
+    @State private var showingAllHomeVisits = false
     
     @State private var selectedAppointment: AppointmentDetail?
     @State private var selectedHomeVisit: HomevisitDetail?
@@ -76,8 +80,17 @@ struct AppointmentsView: View {
             detailsOverlays
         }
         .fullScreenCover(isPresented: $showingNotifications) {
-                    NotificationsView()
+            NotificationsView()
+                .onDisappear {
+                    badgeManager.fetchNotificationCount()
                 }
+        }
+        .fullScreenCover(isPresented: $showingAllAppointments) {
+            AllAppointmentsView()
+        }
+        .fullScreenCover(isPresented: $showingAllHomeVisits) {
+            AllHomeVisitsView()
+        }
     }
     
     private var mainContent: some View {
@@ -87,6 +100,9 @@ struct AppointmentsView: View {
         }
         .background(Color(.systemGroupedBackground))
         .opacity(showAppointmentDetails || showHomeVisitDetails ? 0 : 1)
+        .onAppear {
+            badgeManager.fetchNotificationCount()
+        }
     }
     
     private var headerSection: some View {
@@ -100,15 +116,33 @@ struct AppointmentsView: View {
             Button(action: {
                 showingNotifications = true
             }) {
-                Image(systemName: "bell")
-                    .font(.system(size: 14))
-                    .foregroundColor(.black)
+                ZStack {
+                    Image(systemName: "bell")
+                        .font(.system(size: 14))
+                        .foregroundColor(.black)
+                    
+                    if badgeManager.notificationCount > 0 {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red)
+                                .frame(width: 16, height: 16)
+                            
+                            Text("\(min(badgeManager.notificationCount, 99))")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .offset(x: 8, y: -8)
+                    }
+                }
             }
             .padding(10)
             .overlay(
                 Circle()
                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
             )
+            .accessibilityLabel(badgeManager.notificationCount > 0 ? "Notifications (\(badgeManager.notificationCount) unread)" : "Notifications")
+            .accessibilityHint("Double tap to view notifications")
+            .accessibilityAddTraits(.isButton)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
@@ -120,7 +154,7 @@ struct AppointmentsView: View {
                 bookingOptionsSection
                 upcomingAppointmentsSection
                 homeVisitsSection
-//                quickActionsSection
+                //                quickActionsSection
                 Spacer(minLength: 100)
             }
         }
@@ -214,7 +248,9 @@ struct AppointmentsView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.black)
             Spacer()
-            Button(action: {}) {
+            Button(action: {
+                showingAllAppointments = true
+            }) {
                 Text("View all")
                     .font(.system(size: 14))
                     .foregroundColor(.blue)
@@ -392,7 +428,9 @@ struct AppointmentsView: View {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(.black)
             Spacer()
-            Button(action: {}) {
+            Button(action: {
+                showingAllHomeVisits = true
+            }) {
                 Text("View all")
                     .font(.system(size: 14))
                     .foregroundColor(.green)
@@ -508,7 +546,7 @@ struct AppointmentsView: View {
             }
         }
     }
-
+    
     
     private func getInitials(from name: String) -> String {
         let components = name.components(separatedBy: " ")
@@ -733,11 +771,11 @@ struct HomeVisitCardView: View {
     }
 }
 
-//struct AppointmentsView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        AppointmentsView(
-//            onBookAppointment: {},
-//            onBookHomeVisit: {}
-//        )
-//    }
-//}
+struct AppointmentsView_Previews: PreviewProvider {
+    static var previews: some View {
+        AppointmentsView(
+            onBookAppointment: {},
+            onBookHomeVisit: {}
+        )
+    }
+}

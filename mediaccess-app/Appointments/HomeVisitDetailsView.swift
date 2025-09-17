@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import EventKit
 
 struct HomeVisitDetailsView: View {
     let homeVisit: HomevisitDetail
@@ -9,6 +10,9 @@ struct HomeVisitDetailsView: View {
     @State private var showCancelAlert = false
     @State private var showRescheduleAlert = false
     @State private var showMapView = false
+    @State private var showSuccessAlert = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
     
     var body: some View {
         VStack(spacing: 0) {
@@ -53,12 +57,21 @@ struct HomeVisitDetailsView: View {
         } message: {
             Text("Would you like to reschedule this home visit?")
         }
+        .alert("Success", isPresented: $showSuccessAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Home visit has been added to your calendar successfully!")
+        }
+        .alert("Error", isPresented: $showErrorAlert) {
+            Button("OK") { }
+        } message: {
+            Text("Failed to add home visit to calendar: \(errorMessage)")
+        }
         .sheet(isPresented: $showMapView) {
             ViewMapView(homeVisit: homeVisit)
         }
     }
     
-    // MARK: - Header View
     private var headerView: some View {
         HStack {
             Button(action: onBackTapped) {
@@ -82,7 +95,6 @@ struct HomeVisitDetailsView: View {
             
             Spacer()
             
-            // Share button
             Button(action: shareHomeVisit) {
                 ZStack {
                     Circle()
@@ -102,7 +114,6 @@ struct HomeVisitDetailsView: View {
         .background(Color(.systemGroupedBackground))
     }
     
-    // MARK: - Home Visit Overview Card
     private var homeVisitOverviewCard: some View {
         VStack(spacing: 16) {
             HStack(spacing: 12) {
@@ -158,7 +169,6 @@ struct HomeVisitDetailsView: View {
         .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
     
-    // MARK: - Patient Information Card
     private var patientInformationCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Patient Information")
@@ -227,7 +237,6 @@ struct HomeVisitDetailsView: View {
         }
     }
     
-    // MARK: - Visit Details Card
     private var visitDetailsCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Visit Details")
@@ -265,7 +274,6 @@ struct HomeVisitDetailsView: View {
                     )
                 }
                 
-                // Map button
                 Button(action: {
                     showMapView = true
                 }) {
@@ -332,7 +340,6 @@ struct HomeVisitDetailsView: View {
         }
     }
     
-    // MARK: - Services Card
     private var servicesCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -398,7 +405,6 @@ struct HomeVisitDetailsView: View {
         .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
     }
     
-    // MARK: - Status Card
     private var statusCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Status & Timeline")
@@ -515,11 +521,10 @@ struct HomeVisitDetailsView: View {
         }
     }
     
-    // MARK: - Action Buttons Section
     private var actionButtonsSection: some View {
         VStack(spacing: 12) {
             primaryActionButton
-            secondaryActionButtons
+//            secondaryActionButtons
         }
     }
     
@@ -586,7 +591,6 @@ struct HomeVisitDetailsView: View {
         }
     }
     
-    // MARK: - Helper Functions
     private func serviceIcon(for service: String) -> String {
         switch service.lowercased() {
         case "blood test":
@@ -604,9 +608,95 @@ struct HomeVisitDetailsView: View {
         }
     }
     
-    // MARK: - Action Functions
     private func addToCalendar() {
-        print("Adding home visit to calendar: \(homeVisit.title)")
+        let eventStore = EKEventStore()
+        
+        eventStore.requestAccess(to: .event) { granted, error in
+            DispatchQueue.main.async {
+                if granted && error == nil {
+                    self.createCalendarEvent(eventStore: eventStore)
+                } else {
+                    self.displayErrorAlert(message: error?.localizedDescription ?? "Calendar access denied")
+                }
+            }
+        }
+    }
+    
+    private func createCalendarEvent(eventStore: EKEventStore) {
+        let event = EKEvent(eventStore: eventStore)
+        
+        event.title = "🏠 \(homeVisit.title)"
+        event.notes = """
+        Patient: \(homeVisit.patientName)
+        Services: \(homeVisit.services.joined(separator: ", "))
+        Address: \(homeVisit.address)
+        City: \(homeVisit.city)
+        Contact: \(homeVisit.contactNumber)
+        Cost: LKR \(homeVisit.cost)
+        Patient ID: \(homeVisit.patientId)
+        Status: \(homeVisit.status.capitalized)
+        
+        Instructions: \(homeVisit.instructions.isEmpty ? "None" : homeVisit.instructions)
+        """
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HH:mm" 
+        
+        guard let visitDate = dateFormatter.date(from: homeVisit.visitDate),
+              let visitTime = timeFormatter.date(from: homeVisit.visitTime) else {
+            displayErrorAlert(message: "Failed to parse visit date or time")
+            return
+        }
+        
+        let calendar = Calendar.current
+        let dateComponents = calendar.dateComponents([.year, .month, .day], from: visitDate)
+        let timeComponents = calendar.dateComponents([.hour, .minute], from: visitTime)
+        
+        var combinedComponents = DateComponents()
+        combinedComponents.year = dateComponents.year
+        combinedComponents.month = dateComponents.month
+        combinedComponents.day = dateComponents.day
+        combinedComponents.hour = timeComponents.hour
+        combinedComponents.minute = timeComponents.minute
+        
+        guard let startDate = calendar.date(from: combinedComponents) else {
+            displayErrorAlert(message: "Failed to create start date")
+            return
+        }
+        
+        event.startDate = startDate
+        event.endDate = startDate.addingTimeInterval(7200)
+        
+        event.calendar = eventStore.defaultCalendarForNewEvents
+        
+        let structuredLocation = EKStructuredLocation(title: homeVisit.address)
+        structuredLocation.geoLocation = CLLocation(
+            latitude: homeVisit.latitude,
+            longitude: homeVisit.longitude
+        )
+        event.structuredLocation = structuredLocation
+        
+        let alarm = EKAlarm(relativeOffset: -30 * 60)
+        event.addAlarm(alarm)
+        
+        do {
+            try eventStore.save(event, span: .thisEvent)
+            displaySuccessAlert()
+        } catch {
+            displayErrorAlert(message: error.localizedDescription)
+        }
+    }
+    
+    private func displaySuccessAlert() {
+        showSuccessAlert = true
+    }
+    
+    private func displayErrorAlert(message: String) {
+        errorMessage = message
+        showErrorAlert = true
     }
     
     private func rescheduleHomeVisit() {
@@ -644,7 +734,6 @@ struct HomeVisitDetailsView: View {
     }
 }
 
-// MARK: - Map View
 struct ViewMapView: View {
     let homeVisit: HomevisitDetail
     @Environment(\.dismiss) private var dismiss

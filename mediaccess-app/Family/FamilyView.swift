@@ -27,6 +27,7 @@ struct FamilyView: View {
     @State private var familyAppointments: [AppointmentDetail] = []
     @State private var isLoadingFamilyAppointments = false
     @State private var showingNotifications = false
+    @StateObject private var badgeManager = NotificationBadgeManager.shared
     
     var body: some View {
         ZStack {
@@ -36,6 +37,7 @@ struct FamilyView: View {
         .onAppear {
             loadFamilyMembers()
             fetchFamilyAppointments()
+            badgeManager.fetchNotificationCount()
         }
         .onChange(of: showAddMember) { _, isShowing in
             if !isShowing {
@@ -44,8 +46,11 @@ struct FamilyView: View {
             }
         }
         .fullScreenCover(isPresented: $showingNotifications) {
-                    NotificationsView()
+            NotificationsView()
+                .onDisappear {
+                    badgeManager.fetchNotificationCount()
                 }
+        }
     }
     
     private var mainContent: some View {
@@ -74,9 +79,25 @@ struct FamilyView: View {
                         .frame(width: 40, height: 40)
                         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     
-                    Image(systemName: "bell")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.black)
+                    ZStack {
+                        Image(systemName: "bell")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.black)
+                        
+                        // Notification badge
+                        if badgeManager.notificationCount > 0 {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 16, height: 16)
+                                
+                                Text("\(min(badgeManager.notificationCount, 99))")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .offset(x: 8, y: -8)
+                        }
+                    }
                 }
             }
         }
