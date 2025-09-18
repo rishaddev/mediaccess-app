@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingScreen2: View {
     let onNext: () -> Void
+    let onSkip: () -> Void
     
     var body: some View {
         ZStack {
@@ -39,6 +40,22 @@ struct OnboardingScreen2: View {
             }
             
             VStack(spacing: 40) {
+                // Skip button at the top
+                HStack {
+                    Spacer()
+                    Button(action: onSkip) {
+                        Text("Skip")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(20)
+                    }
+                }
+                .padding(.horizontal, 30)
+                .padding(.top, 20)
+                
                 Spacer()
                 
                 ZStack {

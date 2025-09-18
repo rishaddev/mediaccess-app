@@ -273,10 +273,10 @@ struct SocialLoginButton: View {
 struct OnboardingAndLogin_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            OnboardingScreen1(onNext: {})
+            OnboardingScreen1(onNext: {}, onSkip: {})
                 .previewDisplayName("Onboarding 1")
             
-            OnboardingScreen2(onNext: {})
+            OnboardingScreen2(onNext: {}, onSkip: {})
                 .previewDisplayName("Onboarding 2")
             
             ModernLoginScreen(

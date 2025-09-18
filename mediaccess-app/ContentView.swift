@@ -1,6 +1,9 @@
 import SwiftUI
 
 enum AppState {
+    case landing
+    case onboarding1
+    case onboarding2
     case welcome
     case login
     case signUp
@@ -15,7 +18,7 @@ enum DashboardPage {
 }
 
 struct ContentView: View {
-    @State private var currentState: AppState = .welcome
+    @State private var currentState: AppState = .landing
     @State private var selectedTab: TabSelection = .home
     @State private var dashboardPage: DashboardPage = .main
     
@@ -23,6 +26,48 @@ struct ContentView: View {
         NavigationView {
             Group {
                 switch currentState {
+                case .landing:
+                    LandingView(
+                        onNext: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                currentState = .onboarding1
+                            }
+                        },
+                        onSkip: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                currentState = .welcome
+                            }
+                        }
+                    )
+                    
+                case .onboarding1:
+                    OnboardingScreen1(
+                        onNext: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                currentState = .onboarding2
+                            }
+                        },
+                        onSkip: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                currentState = .welcome
+                            }
+                        }
+                    )
+                    
+                case .onboarding2:
+                    OnboardingScreen2(
+                        onNext: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                currentState = .welcome
+                            }
+                        },
+                        onSkip: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                currentState = .welcome
+                            }
+                        }
+                    )
+                    
                 case .welcome:
                     WelcomeView(
                         onLoginTapped: {
@@ -145,7 +190,7 @@ struct ContentView: View {
         UserDefaults.standard.set(false, forKey: "isLoggedIn")
         
         withAnimation(.easeInOut(duration: 0.3)) {
-            currentState = .welcome
+            currentState = .landing
             selectedTab = .home
             dashboardPage = .main
         }
@@ -155,7 +200,7 @@ struct ContentView: View {
         if UserDefaults.standard.string(forKey: "userEmail") != nil {
             currentState = .login
         } else {
-            currentState = .welcome
+            currentState = .landing
         }
     }
 }
