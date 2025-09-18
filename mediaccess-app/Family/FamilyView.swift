@@ -205,6 +205,7 @@ struct FamilyView: View {
         }
     }
     
+    // This function gets all family members from phone's memory
     private func loadFamilyMembers() {
         if let dependentsData = UserDefaults.standard.data(forKey: "dependents"),
            let dependents = try? JSONDecoder().decode([Dependent].self, from: dependentsData) {
@@ -552,6 +553,7 @@ struct FamilyView: View {
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
     
+    // This function gets all family appointments from the internet
     private func fetchFamilyAppointments() {
     isLoadingFamilyAppointments = true
     familyAppointments = []
@@ -638,6 +640,7 @@ struct FamilyView: View {
     }
 }
     
+    // This function changes how dates look to be easier to read
     private func formatAppointmentDate(_ dateString: String, time timeString: String) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
@@ -720,7 +723,7 @@ struct PastAppointment: Identifiable {
     let title: String
     let doctor: String
     let date: String
-    let memberName: String? // Add this to track which family member the appointment belongs to
+    let memberName: String?
     
     // Updated initializer to include memberName
     init(title: String, doctor: String, date: String, memberName: String? = nil) {

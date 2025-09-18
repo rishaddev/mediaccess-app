@@ -548,16 +548,19 @@ struct AppointmentsView: View {
     }
     
     
+    // This function gets the user's first letters to show in their picture
     private func getInitials(from name: String) -> String {
         let components = name.components(separatedBy: " ")
         let initials = components.compactMap { $0.first }.map { String($0) }
         return initials.prefix(2).joined().uppercased()
     }
     
+    // This function gets the patient's ID from the phone's memory
     private var patientId: String {
         return UserDefaults.standard.string(forKey: "id") ?? ""
     }
     
+    // This function gets all appointments from the internet
     private func fetchAppointments() {
         guard !patientId.isEmpty else {
             alertMessage = "Patient ID not found. Please log in again."
@@ -606,6 +609,7 @@ struct AppointmentsView: View {
         }.resume()
     }
     
+    // This function gets all home visits from the internet
     private func fetchHomeVisits() {
         guard !patientId.isEmpty else {
             alertMessage = "Patient ID not found. Please log in again."

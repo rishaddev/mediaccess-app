@@ -63,6 +63,7 @@ struct DashboardView: View {
         }
     }
     
+    // This function changes text into a real date
     private func dateFromString(_ dateString: String) -> Date? {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -107,6 +108,7 @@ struct DashboardView: View {
         .accessibilityLabel("Medical Dashboard")
     }
     
+    // This function gets the user's first letters to show in their picture
     private func getInitials(from name: String) -> String {
         let components = name.components(separatedBy: " ")
         let initials = components.compactMap { $0.first }.map { String($0) }
@@ -335,6 +337,7 @@ struct DashboardView: View {
         .accessibilityElement(children: .contain)
     }
     
+    // This function changes how the date looks for screen readers
     private func formatDateForAccessibility(_ dateString: String) -> String {
         guard let date = dateFromString(dateString) else { return dateString }
         let formatter = DateFormatter()
@@ -575,10 +578,12 @@ struct DashboardView: View {
         }
     }
     
+    // This function gets the patient's ID from the phone's memory
     private var patientId: String {
         return UserDefaults.standard.string(forKey: "id") ?? ""
     }
     
+    // This function gets all appointments from the internet
     private func fetchAppointments() {
         guard !patientId.isEmpty else {
             alertMessage = "Patient ID not found. Please log in again."
@@ -634,6 +639,7 @@ struct DashboardView: View {
         }.resume()
     }
 
+    // This function gets all medicine orders from the internet
     private func fetchPharmacyOrders() {
         guard !patientId.isEmpty else {
             alertMessage = "Patient ID not found. Please log in again."

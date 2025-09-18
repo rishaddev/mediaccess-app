@@ -389,10 +389,12 @@ struct PharmacyView: View {
         
     }
     
+    // This function gets the patient's ID from the phone's memory
     private var patientId: String {
         return UserDefaults.standard.string(forKey: "id") ?? ""
     }
     
+    // This function gets all medicine orders from the internet
     private func fetchPharmacyOrders() {
         guard !patientId.isEmpty else {
             alertMessage = "Patient ID not found. Please log in again."

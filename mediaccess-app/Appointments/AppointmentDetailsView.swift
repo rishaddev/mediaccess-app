@@ -416,7 +416,6 @@ struct AppointmentDetailsView: View {
         }
     }
     
-    // MARK: - Action Buttons Section
     private var actionButtonsSection: some View {
         VStack(spacing: 12) {
             primaryActionButton

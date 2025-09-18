@@ -121,7 +121,7 @@ struct MapSelectionView: View {
     @StateObject private var locationManager = LocationManager()
     @Environment(\.presentationMode) var presentationMode
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 6.9271, longitude: 79.8612), // Colombo default
+        center: CLLocationCoordinate2D(latitude: 6.9271, longitude: 79.8612),
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
     )
     @State private var annotation: CustomAnnotation?

@@ -10,7 +10,6 @@ struct SignUpView: View {
     @State private var alertMessage = ""
     @State private var showPassword = false
     
-    // Animation states
     @State private var animateContent = false
     @State private var animateFields = false
     @State private var animateButton = false
@@ -74,7 +73,6 @@ struct SignUpView: View {
                             
                             Spacer()
                             
-                            // Invisible spacer for balance
                             Circle()
                                 .fill(Color.clear)
                                 .frame(width: 44, height: 44)
@@ -374,7 +372,7 @@ struct SignUpView: View {
     }
     
     private func signUpUser() {
-        // Basic validation
+        // Validation
         guard !fullName.isEmpty,
               !email.isEmpty,
               !password.isEmpty,
@@ -437,7 +435,7 @@ struct SignUpView: View {
                 }
                 
                 if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-                    // Success - store user data locally (simple approach)
+                    // Success - store user data locally
                     UserDefaults.standard.set(fullName, forKey: "userName")
                     UserDefaults.standard.set(email, forKey: "userEmail")
                     UserDefaults.standard.set(true, forKey: "isLoggedIn")

@@ -317,7 +317,6 @@ struct PlaceNewOrderView: View {
         return UserDefaults.standard.string(forKey: "id") ?? UUID().uuidString
     }
     
-    // MARK: - OCR Processing
     private func processImageWithOCR(_ image: UIImage) {
         guard let cgImage = image.cgImage else { return }
         
@@ -367,15 +366,12 @@ struct PlaceNewOrderView: View {
     }
     
     private func cleanupExtractedText(_ text: String) -> String {
-        // Basic cleanup for prescription text
         var cleanedText = text
         
-        // Remove excessive whitespace and newlines
         cleanedText = cleanedText.replacingOccurrences(of: "\n\n+", with: "\n", options: .regularExpression)
         cleanedText = cleanedText.replacingOccurrences(of: "[ \t]+", with: " ", options: .regularExpression)
         cleanedText = cleanedText.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // Add some structure if it looks like a prescription
         if cleanedText.contains("Dr.") || cleanedText.contains("MD") || cleanedText.contains("Rx") {
             cleanedText = "📋 Prescription Details:\n\n" + cleanedText
         }

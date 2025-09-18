@@ -640,7 +640,6 @@ struct ModernEditableRow: View {
                         self.alertMessage = "Emergency contact updated successfully"
                         self.showAlert = true
                     } else {
-                        // Error
                         if let data = data,
                            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                            let message = json["message"] as? String {
@@ -709,7 +708,7 @@ struct ModernEditableRow: View {
     }
 }
 
-// EmergencyContact model for the emergency contact array
+
 struct EmergencyContact: Codable {
     let id: String
     let name: String

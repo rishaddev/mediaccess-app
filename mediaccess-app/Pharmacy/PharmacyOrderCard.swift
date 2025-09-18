@@ -55,7 +55,7 @@ struct PharmacyOrderCard: View {
             }
             .padding(16)
             
-            // Status Bar (no progress field in real model)
+            // Status Bar
             VStack(spacing: 8) {
                 HStack {
                     Text(order.status)
@@ -75,9 +75,7 @@ struct PharmacyOrderCard: View {
         )
     }
 }
-// ...existing code...
 
-// MARK: - Supporting Models
 //struct PharmacyOrder: Identifiable {
 //    let id = UUID()
 //    let orderNumber: String

@@ -257,7 +257,7 @@ struct ContactCard: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
-                // Icon container (matching AppointmentCard style)
+                // Icon container
                 ZStack {
                     Circle()
                         .fill(Color.blue.opacity(0.1))

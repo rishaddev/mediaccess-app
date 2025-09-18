@@ -9,6 +9,7 @@ class NotificationBadgeManager: ObservableObject {
     
     private init() {}
     
+    // This function gets the total number of notifications
     func fetchNotificationCount() {
         let group = DispatchGroup()
         var pendingCount = 0
@@ -37,10 +38,12 @@ class NotificationBadgeManager: ObservableObject {
         }
     }
     
+    // This function updates the notification count
     func refreshBadgeCount() {
         fetchNotificationCount()
     }
     
+    // This function removes all notification count
     func clearBadgeCount() {
         DispatchQueue.main.async {
             self.notificationCount = 0

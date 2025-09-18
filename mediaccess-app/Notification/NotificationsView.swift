@@ -470,7 +470,6 @@ struct NotificationCard: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Enhanced Icon
             ZStack {
                 Circle()
                     .fill(
@@ -537,7 +536,7 @@ struct NotificationCard: View {
             
             Spacer()
             
-            // Enhanced Action button for pending notifications
+            // Action button for pending notifications
             if isPending, let onCancel = onCancel {
                 Button(action: onCancel) {
                     ZStack {

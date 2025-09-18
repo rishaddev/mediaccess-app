@@ -829,7 +829,7 @@ struct BookAppointmentView: View {
                     let response = try JSONDecoder().decode(DoctorsResponse.self, from: data)
                     self.doctors = response.allDoctors
                     
-                    print("Successfully loaded \(self.doctors.count) doctors") // Debug log
+                    print("Successfully loaded \(self.doctors.count) doctors")
                     
                 } catch {
                     print("Decoding error: \(error)")

@@ -273,15 +273,8 @@ struct SettingsView: View {
         // Clear all user data from UserDefaults
         UserDefaults.standard.removeObject(forKey: "email")
         UserDefaults.standard.removeObject(forKey: "isLoggedIn")
-        
-        // Clear any other user-related data you might have stored
-        // UserDefaults.standard.removeObject(forKey: "userToken")
-        // UserDefaults.standard.removeObject(forKey: "userProfile")
-        
-        // Dismiss this view and trigger logout in parent
         dismiss()
         
-        // Call the logout closure passed from parent
         onLogout()
     }
 }

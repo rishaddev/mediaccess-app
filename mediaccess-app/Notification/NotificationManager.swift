@@ -13,7 +13,6 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         UNUserNotificationCenter.current().delegate = self
     }
     
-    // MARK: - UNUserNotificationCenterDelegate
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         // Check if notifications are enabled when about to present
@@ -44,7 +43,6 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             DispatchQueue.main.async {
                 if granted {
                     print("Notification permission granted")
-                    // Don't auto-enable - let user control this through settings
                 } else if let error = error {
                     print("Notification permission denied: \(error.localizedDescription)")
                     self.isNotificationEnabled = false
@@ -67,7 +65,6 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             return
         }
         
-        // Always schedule the notification, but don't change user preference
         scheduleReminders(
             appointmentDateTime: appointmentDateTime,
             patientName: patientName,

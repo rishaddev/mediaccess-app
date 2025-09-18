@@ -251,21 +251,16 @@ struct PrivacySettingsView: View {
         return !currentPassword.isEmpty && !newPassword.isEmpty && !confirmPassword.isEmpty
     }
     
-    // MARK: - Helper Functions
-    
     private func containsSpecialCharacter(_ password: String) -> Bool {
         let specialCharacterSet = CharacterSet(charactersIn: "@$!%*#?&")
         return password.rangeOfCharacter(from: specialCharacterSet) != nil
     }
     
     private func updatePassword() {
-        // Validate fields
         guard validateFields() else { return }
         
-        // Start loading
         isLoading = true
         
-        // Prepare request data
         let requestData: [String: Any] = [
             "id": patientId,
             "email": patientEmail,

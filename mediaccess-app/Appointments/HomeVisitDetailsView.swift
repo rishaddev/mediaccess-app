@@ -608,6 +608,7 @@ struct HomeVisitDetailsView: View {
         }
     }
     
+    // This function asks permission to add events to the phone's calendar
     private func addToCalendar() {
         let eventStore = EKEventStore()
         
@@ -622,6 +623,7 @@ struct HomeVisitDetailsView: View {
         }
     }
     
+    // This function creates a new event in the phone's calendar
     private func createCalendarEvent(eventStore: EKEventStore) {
         let event = EKEvent(eventStore: eventStore)
         
